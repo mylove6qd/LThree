@@ -99,13 +99,16 @@ var path = new CustomSinCurve( 10 );
     });
 var mesh = new THREE.Mesh( geometry, material );
 let a = true;
+three.addRenderEvent('a',function(){
+        mesh.rotation.y += 0.01;
+        },false);
 mesh.on('click', function () { 
     if(a){
-        three.addRenderEvent('a',function(){
-        mesh.rotation.y += 0.01;
-        })
+        three.applyRenderEvent('a',true);
+        three.applyRenderEvent('b',false);
     }else{
-        three.removeRenderEvent('a');
+        three.applyRenderEvent('a',false);
+        three.applyRenderEvent('b',true);
     }
     a = !a;   
     console.log(this);
@@ -114,7 +117,7 @@ mesh.on('click', function () {
 let initTime=  Date.now();
 three.addRenderEvent('b',()=>{
     mesh.material.uniforms.time.value = lineUniforms.speed.value*((Date.now()-initTime)/1000)%(parseInt(lineUniforms.colorDistance.value)+parseInt(lineUniforms.TransparentDistance.value));
-});
+},true);
 
 three.scene.add( mesh );
 

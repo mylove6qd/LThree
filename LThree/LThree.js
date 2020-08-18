@@ -53,9 +53,13 @@ class LThree{
             return this.scene;
         }
     };
+    //启用或停止某个event
+    applyRenderEvent = function(evnetName,targer){
+            this._renderEventMap.set(evnetName,[this._renderEventMap.get(evnetName)[0],targer]);
+    }
     //添加render事件
-    addRenderEvent = function(eventName,fn){
-        this._renderEventMap.set(eventName, fn);
+    addRenderEvent = function(eventName,fn,targer){
+        this._renderEventMap.set(eventName, [fn,targer]);
     }
     //删除redner事件
     removeRenderEvent = function (eventName) {
@@ -70,7 +74,9 @@ class LThree{
     //渲染方法
     render = function(){
         for (let [key, value] of this._renderEventMap) {
-            value();
+            if(value[1]){
+                value[0]();
+            }
         }
         this.renderer.render(this.scene, this.camera);
     };
