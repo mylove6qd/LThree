@@ -113,6 +113,16 @@ class LThree{
                 this._isMove = true;
             }
         });
+        //添加window 的resize事件监听 (浏览器窗口变动触发的方法)
+        window.addEventListener('resize',(event)=>{
+            // 重新设置相机宽高比例
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            // 更新相机投影矩阵
+            this.camera.updateProjectionMatrix();
+            // 重新设置渲染器渲染范围
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        //对象添加到window中
         window.LThree = this;
     }
 }export { LThree };
