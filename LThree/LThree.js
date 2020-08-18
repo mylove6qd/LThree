@@ -112,7 +112,8 @@ class LThree{
             if(this._isDown){
                 this._isMove = true;
             }
-        })
+        });
+        window.LThree = this;
     }
 }export { LThree };
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script type="module">
+    import { LThree } from './LThree/LThree.js';
+    import * as THREE from './LThree/build/three.module.js';
+    var three = new LThree({ id: 'webgl' });
+    // three.renderer.setClearColor(0x000000, 1.0);
+    three.camera.position.set(8, 15, 38);
+    three.camera.lookAt(three.scene.position);
+
+
+
+
+    function CustomSinCurve( scale ) {
+
+THREE.Curve.call( this );
+
+this.scale = ( scale === undefined ) ? 1 : scale;
+
+}
+
+CustomSinCurve.prototype = Object.create( THREE.Curve.prototype );
+CustomSinCurve.prototype.constructor = CustomSinCurve;
+
+CustomSinCurve.prototype.getPoint = function ( t ) {
+
+var tx = t * 3 - 1.5;
+var ty = Math.sin( 2 * Math.PI * t );
+var tz = 0;
+
+return new THREE.Vector3( tx, ty, tz ).multiplyScalar( this.scale );
+
+};
+
+var path = new CustomSinCurve( 10 );
+//var geometry = new THREE.BufferGeometry().fromGeometry(new THREE.TubeGeometry( path, 20, 1, 8, false ));
+ var geometry = new THREE.TubeGeometry( path, 400, 1, 80, false );
+ var lineUniforms =  {
+    speed:{value:10},
+    time:{type:"f",value:"0.0"},
+    colorDistance:{type:"f",value:"0.01"},
+    TransparentDistance:{type:"f",value:"0.01"},
+    color: {
+        type: "c",
+         value: new THREE.Color(0x00cacc)
+    },
+    backColor: {
+    type: "c",
+        value: new THREE.Color(0xFFFFFF)
+}
+};
+ //管道
+ let material = new THREE.ShaderMaterial({
+        side:THREE.DoubleSide,
+        transparent:true,
+        uniforms: lineUniforms,
+        vertexShader:`
+        varying vec2 vUv;
+            void main(){
+                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
+                vUv = uv;
+            }`,
+        fragmentShader:`
+            uniform float colorDistance;
+            uniform float TransparentDistance;
+            uniform vec3 color;
+            uniform vec3 backColor;
+            uniform float time;
+            varying vec2 vUv;
+            void main(){
+             float y=mod(vUv.x-time,colorDistance+TransparentDistance);
+                if(y>TransparentDistance) {
+                    gl_FragColor = vec4(color,1.0);
+                } else {
+                discard;
+                 //gl_FragColor = vec4(backColor,0.);
+                 }
+            }`
+
+    });
+
+var mesh = new THREE.Mesh( geometry, material );
+mesh.on('click', function () { 
+       console.log(this);
+    });
+three.scene.add( mesh );
+
+three.update();
+</script>
+
+</html>

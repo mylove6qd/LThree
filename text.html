@@ -27,17 +27,23 @@
     three.renderer.setClearColor(0xDA70D6, 1.0);
     three.camera.position.set(-4, 1, 1);
     three.camera.lookAt(three.scene.position);
+    // var geometry = new THREE.BufferGeometry().fromGeometry(new THREE.BoxGeometry(1, 1, 1));
     var geometry = new THREE.BoxGeometry(1, 1, 1);
-    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(Math.random() * 0xffffff) });
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(Math.random() * 0xffffff),wireframe:true });
     var cube = new THREE.Mesh(geometry, material);
-    window.cube = cube;
-  
     cube.on('dblclick', function () { 
-       alert(123);
+        console.log(this);
+       alert('我是母体');
     });
 
     let cubeb = cube.clone()
+	  cubeb.on('dblclick', function () { 
+       alert('我是拷贝a');
+    });
     let cubebb = cube.clone()
+	  cubebb.on('dblclick', function () { 
+       alert('我是拷贝b');
+    });
     cubeb.translateY(1.5);
     cubebb.translateY(-1.5);
     let group = new THREE.Group()
