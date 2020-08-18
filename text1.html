@@ -54,10 +54,10 @@ var path = new CustomSinCurve( 10 );
 //var geometry = new THREE.BufferGeometry().fromGeometry(new THREE.TubeGeometry( path, 20, 1, 8, false ));
  var geometry = new THREE.TubeGeometry( path, 400, 1, 80, false );
  var lineUniforms =  {
-    speed:{value:10},
+    speed:{type:"f",value:10},
     time:{type:"f",value:"0.0"},
-    colorDistance:{type:"f",value:"0.01"},
-    TransparentDistance:{type:"f",value:"0.01"},
+    colorDistance:{type:"f",value:"2."},
+    TransparentDistance:{type:"f",value:"2."},
     color: {
         type: "c",
          value: new THREE.Color(0x00cacc)
@@ -84,9 +84,10 @@ var path = new CustomSinCurve( 10 );
             uniform vec3 color;
             uniform vec3 backColor;
             uniform float time;
+            uniform float speed;
             varying vec2 vUv;
             void main(){
-             float y=mod(vUv.x-time,colorDistance+TransparentDistance);
+             float y=mod(vUv.x * 100.-time,colorDistance+TransparentDistance);
                 if(y>TransparentDistance) {
                     gl_FragColor = vec4(color,1.0);
                 } else {
@@ -96,11 +97,25 @@ var path = new CustomSinCurve( 10 );
             }`
 
     });
-
 var mesh = new THREE.Mesh( geometry, material );
+let a = true;
 mesh.on('click', function () { 
-       console.log(this);
+    if(a){
+        three.addRenderEvent('a',function(){
+        mesh.rotation.y += 0.01;
+        })
+    }else{
+        three.removeRenderEvent('a');
+    }
+    a = !a;   
+    console.log(this);
     });
+
+let initTime=  Date.now();
+three.addRenderEvent('b',()=>{
+    mesh.material.uniforms.time.value = lineUniforms.speed.value*((Date.now()-initTime)/1000)%(parseInt(lineUniforms.colorDistance.value)+parseInt(lineUniforms.TransparentDistance.value));
+});
+
 three.scene.add( mesh );
 
 three.update();

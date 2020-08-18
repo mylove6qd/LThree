@@ -9,6 +9,8 @@ THREE.Object3D.prototype.off = function(type){
 }
 
 class LThree{
+    //管理render事件的map
+    _renderEventMap = new Map();
     //是否冒泡
     _isPropagation = true;
     //按下的对象
@@ -51,12 +53,25 @@ class LThree{
             return this.scene;
         }
     };
+    //添加render事件
+    addRenderEvent = function(eventName,fn){
+        this._renderEventMap.set(eventName, fn);
+    }
+    //删除redner事件
+    removeRenderEvent = function (eventName) {
+        if (this._renderEventMap.has(eventName)) {
+            this._renderEventMap.delete(eventName);
+        }
+    };
     //阻止事件冒泡
     stopPropagation = function(){
         this._isPropagation = false
     }
     //渲染方法
     render = function(){
+        for (let [key, value] of this._renderEventMap) {
+            value();
+        }
         this.renderer.render(this.scene, this.camera);
     };
     //更新方法
@@ -80,6 +95,7 @@ class LThree{
         this.camera = option.camera;
         this.renderer = option.renderer;
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio( window.devicePixelRatio );
         this.controls = controls;
         this.camera.lookAt(this.scene.position);
         this.controls.target.x = this.scene.position.x; 
