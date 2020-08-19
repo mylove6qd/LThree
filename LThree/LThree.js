@@ -1,6 +1,7 @@
 //r-118
 import * as THREE from './build/three.module.js';
 import { OrbitControls } from './examples/jsm/controls/OrbitControls.js';
+import Stats from './examples/jsm/libs/stats.module.js';
 THREE.Object3D.prototype.on = function(type,fn){
     this[type] = fn;
 }
@@ -53,7 +54,18 @@ class LThree{
             return this.scene;
         }
     };
-    //启用或停止某个event
+    //加载Stats
+    initStats  =function(){
+        this.stats = new Stats();
+        this.stats.domElement.style.position = 'absolute';
+        this.stats.domElement.style.left = '0px';
+        this.stats.domElement.style.top = '0px';
+        this.container.appendChild( this.stats.dom );
+        this.addRenderEvent('_statsRender',()=>{
+                this.stats.update();
+        },true);
+    }
+    //启用或停止某个event    targer true/false
     applyRenderEvent = function(evnetName,targer){
             this._renderEventMap.set(evnetName,[this._renderEventMap.get(evnetName)[0],targer]);
     }
@@ -107,20 +119,20 @@ class LThree{
         this.controls.target.x = this.scene.position.x; 
         this.controls.target.y = this.scene.position.y;
         this.controls.target.z = this.scene.position.z;
-        this.controls.addEventListener('change', this.render.bind(this));
-        document.getElementById(option.id).appendChild(this.renderer.domElement);
+        this.container = document.getElementById(option.id);
+        this.container.appendChild(this.renderer.domElement);
         //双击事件
-        document.getElementById(option.id).addEventListener("dblclick",(event)=>{
+        this.container.addEventListener("dblclick",(event)=>{
             let obj =  this._getRaycasterObj.bind(this)();
             this._recursionEvent(obj,'dblclick',event)
         })
         //鼠标按下事件
-        document.getElementById(option.id).addEventListener("mousedown",(event)=>{
+        this.container.addEventListener("mousedown",(event)=>{
             this._isDown = true;
             this._mousedownObj =  this._getRaycasterObj.bind(this)();
         })
         //鼠标弹起事件
-        document.getElementById(option.id).addEventListener("mouseup",(event)=>{
+        this.container.addEventListener("mouseup",(event)=>{
             if(this._isMove == false){
                 let obj =  this._getRaycasterObj.bind(this)();
                 this._recursionEvent(obj,'click',event)
@@ -130,7 +142,7 @@ class LThree{
             this._isMove = false;
         })
         //鼠标移动事件
-        document.getElementById(option.id).addEventListener("mousemove",(event)=>{
+        this.container.addEventListener("mousemove",(event)=>{
             if(this._isDown){
                 this._isMove = true;
             }
@@ -144,8 +156,6 @@ class LThree{
             // 重新设置渲染器渲染范围
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
-        //对象添加到window中
-        window.LThree = this;
     }
 }export { LThree };
 

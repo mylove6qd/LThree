@@ -11,6 +11,9 @@
         overflow: hidden;
         padding: 0;
     }
+    canvas {
+        outline: 0;
+    }
 </style>
 
 <body>
@@ -23,8 +26,7 @@
 <script type="module">
     import { LThree } from './LThree/LThree.js';
     import * as THREE from './LThree/build/three.module.js';
-    var three = new LThree({ id: 'webgl' })
-    three.renderer.setClearColor(0xDA70D6, 1.0);
+    var three = new LThree({ id: 'webgl' });
     three.camera.position.set(-4, 1, 1);
     three.camera.lookAt(three.scene.position);
     // var geometry = new THREE.BufferGeometry().fromGeometry(new THREE.BoxGeometry(1, 1, 1));
