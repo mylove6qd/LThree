@@ -8,7 +8,7 @@ THREE.Object3D.prototype.on = function(type,fn){
 THREE.Object3D.prototype.off = function(type){
     delete this[type];
 }
-
+//主类
 class LThree{
     //管理render事件的map
     _renderEventMap = new Map();
@@ -79,6 +79,7 @@ class LThree{
     }
     //添加render事件
     addRenderEvent = function(eventName,fn,targer){
+        targer = targer==undefined?true:targer;
         this._renderEventMap.set(eventName, [fn,targer]);
     }
     //删除redner事件
@@ -169,9 +170,10 @@ class LThree{
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
     }
-}export { LThree };
+}
+export { LThree };
 
-
+//------------------------------------------------------------------------------------------utils function 
 //过滤射线的所有透明对象 所见即所得
 function LThree_filterVisible3dObj(intersects) {
     for (var i = 0; i < intersects.length; i++) {
@@ -187,5 +189,28 @@ function LThree_filterVisible3dObj(intersects) {
     return intersects;
 }
 
+//加载GLTF模型
+//src 模型地址   fun 回调方法 接受的参数为模型
+//可以加载多个
+function loadGLTF(srcs,fun) {
+    let start_time = (new Date()).getTime();
+    let loader = new THREE.GLTFLoader();
+    let returnObj = new Array(srcs.length);
+    let index = 0;
+    for(let i = 0;i<srcs.length;i++){
+        loader.load(srcs[i], function (gltf) {
+                ++index;
+                returnObj[i] = gltf.scene;
+                if(index==srcs.length){
+                    let start_time2 = (new Date()).getTime();
+                    console.log(index+"个GLTF模型加载时间 "+(start_time2 - start_time)/1000 + " 秒");
+                    fun(returnObj);
+                }
+            },
+            function (xhr) {
+                console.log("loadeding ...  "+( xhr.loaded / xhr.total * 100 ).toFixed(2) + '% '+parseInt(i+1)+'个');
+            });
+    }
+}
 
 
