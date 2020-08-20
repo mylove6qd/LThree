@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<!-- <script src="./LThree/plug/THREE.MeshLine.js"></script> -->
+<script type="module">
+    import { LThree } from './LThree/LThree.js';
+    import * as THREE from './LThree/build/three.module.js';
+    import { MeshLine ,MeshLineMaterial} from './LThree/plug/THREE.MeshLine.js';
+
+    var three = new LThree({ id: 'webgl' });
+    three.initStats();
+    window.three = three;
+   
+    three.camera.position.set(8, 15, 38);
+    three.camera.lookAt(three.scene.position);
+
+    var curve = new THREE.CubicBezierCurve(
+	    new THREE.Vector2( -10, 0 ),
+	    new THREE.Vector2( -5, 15 ),
+	    new THREE.Vector2( 20, 15 ),
+	    new THREE.Vector2( 10, 0 )
+    );
+
+    var points = curve.getPoints( 50 );
+    var geometry = new THREE.Geometry().setFromPoints( points );
+
+    let lineGeometry = new MeshLine();
+    lineGeometry.setGeometry(geometry ,(p)=>{return 1-p;});
+    let materialObj = new MeshLineMaterial( { 
+        color: new THREE.Color(1,0,0 ),
+        lineWidth:0.1 ,
+       // dashArray:0.2,
+        dashOffset:0,
+    })
+    let line = new THREE.Mesh(lineGeometry.geometry, materialObj);
+    three.scene.add(line);
+
+    let line2 = line.clone();
+    line2.translateY(5);
+    line2.translateX(5);
+    line2.translateZ(5);
+    line2.material = new MeshLineMaterial( { color: new THREE.Color( 0,0.8,0 ),lineWidth:0.1 })
+    three.scene.add(line2);
+
+    three.addRenderEvent('b',(time)=>{
+        materialObj.uniforms.visibility.value=  (time/3000) % 1.0;
+    },true);
+
+    three.update();
+</script>
+
+</html>

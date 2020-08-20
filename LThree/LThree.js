@@ -37,8 +37,8 @@ class LThree{
         this._recursionEvent(obj.parent,EventName);
     }
 }
-    //射线获取对象
-     _getRaycasterObj = function(){
+    //发射射线
+    _shootRaycaster = function(){
         let mouse = new THREE.Vector2();
         let raycaster = new THREE.Raycaster();
     // 计算鼠标点击位置转换到3D场景后的位置
@@ -49,10 +49,18 @@ class LThree{
         let intersects = raycaster.intersectObjects(this.scene.children, true);
         if (intersects.length > 0) {
             intersects = LThree_filterVisible3dObj(intersects);
-            return intersects[0].object;
+            let objs = [];
+            for(let i = 0;i<intersects.length;i++){
+                objs.push(intersects[i].object);
+            }
+            return objs;
         }else{
-            return this.scene;
+            return [this.scene];
         }
+    }
+    //射线获取第一个对象
+     _getRaycasterObj = function(){
+        return this._shootRaycaster()[0];
     };
     //加载Stats
     initStats  =function(){
@@ -84,20 +92,21 @@ class LThree{
         this._isPropagation = false
     }
     //渲染方法
-    render = function(){
+    render = function(time){
+        
         for (let [key, value] of this._renderEventMap) {
             if(value[1]){
-                value[0]();
+                value[0](time);
             }
         }
         this.renderer.render(this.scene, this.camera);
     };
     //更新方法
-    update = function(){
-        requestAnimationFrame(() => {
-            this.update();
+    update = function(time){
+        requestAnimationFrame((time) => {
+            this.update(time);
         });
-        this.render();
+        this.render(time);
     };  
     //构造函数
     constructor(opt){
@@ -146,6 +155,9 @@ class LThree{
             if(this._isDown){
                 this._isMove = true;
             }
+            //mouseenter  mouseleave 
+            //mouseover  mouseout 
+            //与 mouseout 事件不同，只有在鼠标指针离开被选元素时，才会触发 mouseleave 事件。如果鼠标指针离开任何子元素，同样会触发 mouseout 事件
         });
         //添加window 的resize事件监听 (浏览器窗口变动触发的方法)
         window.addEventListener('resize',(event)=>{
