@@ -41,7 +41,7 @@ class BoxBufferGeometry extends BufferGeometry {
 	constructor( width, height, depth, widthSegments, heightSegments, depthSegments ) {
 
 		super();
-
+debugger
 		this.type = 'BoxBufferGeometry';
 
 		this.parameters = {

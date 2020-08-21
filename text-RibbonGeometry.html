@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script type="module">
+    import { LThree } from './LThree/LThree.js';
+    import { RibbonGeometry,RibbonBufferGeometry } from './LThree/mysrc/RibbonGeometry.js';
+    import * as THREE from './LThree/build/three.module.js';
+    var three = new LThree({ id: 'webgl' });
+    three.initStats();
+   
+    three.camera.position.set(0, 1, 20);
+    three.camera.lookAt(three.scene.position);
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+
+    // var curve = new THREE.CubicBezierCurve(
+	//     new THREE.Vector2( -10, 0 ),
+	//     new THREE.Vector2( -5, 15 ),
+	//     new THREE.Vector2( 20, 15 ),
+	//     new THREE.Vector2( 10, 0 )
+    // );
+
+    // var points = curve.getPoints( 50 );
+    let points = [
+            new THREE.Vector2( 0, 1 ),
+            new THREE.Vector2( 5, 1 ),
+           // new THREE.Vector2( 10, 1 ),
+    ];
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:true});
+    var g =new RibbonBufferGeometry(points,1,three.camera.position);
+    var cube = new THREE.Mesh(g, material);
+
+    var axesHelper = new THREE.AxesHelper( 5 );
+    three.scene.add( axesHelper );
+
+    three.scene.add(cube);
+
+    three.update();
+</script>
+
+</html>

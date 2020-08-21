@@ -45,7 +45,10 @@
 
     var points = curve.getPoints( 50 );
     var geometry = new THREE.Geometry().setFromPoints( points );
-
+    var geometry2 = new THREE.BoxBufferGeometry(1,1,1);
+    var material2 = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:true });
+    var cube = new THREE.Mesh(geometry2, material2);
+    three.scene.add(cube);
     let lineGeometry = new MeshLine();
     lineGeometry.setGeometry(geometry);
             let materialObj = new MeshLineMaterial({ 

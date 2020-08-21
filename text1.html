@@ -55,8 +55,8 @@ return new THREE.Vector3( tx, ty, tz ).multiplyScalar( this.scale );
 };
 
 var path = new CustomSinCurve( 10 );
-//var geometry = new THREE.BufferGeometry().fromGeometry(new THREE.TubeGeometry( path, 20, 1, 8, false ));
- var geometry = new THREE.TubeGeometry( path, 400, 1, 80, false );
+var geometry = new THREE.BufferGeometry().fromGeometry( new THREE.TubeGeometry( path, 400, 1, 80, false ));
+//  var geometry = new THREE.TubeGeometry( path, 400, 1, 80, false );
  var lineUniforms =  {
     speed:{type:"f",value:10},
     time:{type:"f",value:"0.0"},

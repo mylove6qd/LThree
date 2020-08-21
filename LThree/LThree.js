@@ -1,6 +1,11 @@
-//r-118
+/**
+ * @author lcx / https://github.com/mylove6qd
+ * THREE r-118
+ */
+
 import * as THREE from './build/three.module.js';
 import { OrbitControls } from './examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from './examples/jsm/loaders/GLTFLoader.js';
 import Stats from './examples/jsm/libs/stats.module.js';
 THREE.Object3D.prototype.on = function(type,fn){
     this[type] = fn;
@@ -171,7 +176,9 @@ class LThree{
         });
     }
 }
-export { LThree };
+export { LThree ,
+        loadGLTF
+        };
 
 //------------------------------------------------------------------------------------------utils function 
 //过滤射线的所有透明对象 所见即所得
@@ -194,7 +201,7 @@ function LThree_filterVisible3dObj(intersects) {
 //可以加载多个
 function loadGLTF(srcs,fun) {
     let start_time = (new Date()).getTime();
-    let loader = new THREE.GLTFLoader();
+    let loader = new GLTFLoader();
     let returnObj = new Array(srcs.length);
     let index = 0;
     for(let i = 0;i<srcs.length;i++){
