@@ -138,15 +138,15 @@ function buildPlane(obj){
 
     //计算索引
     //面数
-    let facesNumber = (obj.parameters.basePoints.length) * 2 - 2;
+    let facesNumber = (obj.parameters.basePoints.length) - 1;
     for(let x = 0, i = 0;i<facesNumber;i++,x+=2){
         indices.push(x);
-        indices.push(2*x+3);
-        indices.push(2*x+2);
+        indices.push(2*i+3);
+        indices.push(2*i+2);
 
         indices.push(x);
-        indices.push(2*x+1);
-        indices.push(2*x+3);
+        indices.push(2*i+1);
+        indices.push(2*i+3);
     }
 
 
