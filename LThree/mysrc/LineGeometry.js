@@ -7,9 +7,9 @@ import { BufferGeometry } from '../src/core/BufferGeometry.js';
 import { Float32BufferAttribute } from '../src/core/BufferAttribute.js';
 import { Vector3 } from '../src/math/Vector3.js';
 
-//RibbonGeometry
+//LineGeometry
 
-class RibbonGeometry extends Geometry{
+class LineGeometry extends Geometry{
   
     //basePoints 基础点数组 [Vector2] / [Vector3]  width 条带宽度   相机点 cameraPosition
     constructor(basePoints,width,cameraPosition){
@@ -17,7 +17,7 @@ class RibbonGeometry extends Geometry{
 
         super();
 
-        this.type = 'RibbonGeometry';
+        this.type = 'LineGeometry';
 
         this.parameters = {
             basePoints:basePoints,
@@ -25,23 +25,23 @@ class RibbonGeometry extends Geometry{
             cameraPosition:cameraPosition
         }
 
-        this.fromBufferGeometry( new RibbonBufferGeometry( basePoints,width,cameraPosition ) );
+        this.fromBufferGeometry( new LineBufferGeometry( basePoints,width,cameraPosition ) );
 
 		this.mergeVertices();
     }
 
 }
 
-//RibbonBufferGeometry
+//LineBufferGeometry
 
-class RibbonBufferGeometry extends BufferGeometry{
+class LineBufferGeometry extends BufferGeometry{
   
     constructor(basePoints,width,cameraPosition){
         basePoints = processBasePoints(basePoints);
 
         super();
 
-        this.type = 'RibbonBufferGeometry';
+        this.type = 'LineBufferGeometry';
 
         this.parameters = {
             basePoints:basePoints,
@@ -87,26 +87,38 @@ function buildPlane(obj){
     //半径
     let width = obj.parameters.width/2;
 
-    //拿头两个点和相机位置点 计算需要平移的两个法向量
-    let point_1 = obj.parameters.basePoints[0];
-    let point_2 = obj.parameters.basePoints[1];
     let point_3 = obj.parameters.cameraPosition;
 
+    //保存相机点位置
     cameraPosition.push(point_3.x);
     cameraPosition.push(point_3.y);
     cameraPosition.push(point_3.z);
-
-    //normalize () negate
-    let vector_1 =  point_1.clone().add(point_3.clone().negate());
-    let vector_2 =  point_2.clone().add(point_3.clone().negate());
-    //得到整个线扩张的两个法向量
-    let targer_vector_1 = (vector_2.clone().cross(vector_1)).normalize();
-    let targer_vector_2 = targer_vector_1.clone().negate();
 
     //计算点
     for(let i = 0;i<obj.parameters.basePoints.length;i++){
         //基准点
         let point = obj.parameters.basePoints[i];
+
+        let point_1;
+        let point_2;
+        //如果是第一个点计算 就去它自身和后面的 否则就去自身和前面的
+        if(i==0){
+            //拿头两个点和相机位置点 计算需要平移的两个法向量
+             point_1 = obj.parameters.basePoints[0];
+             point_2 = obj.parameters.basePoints[1];
+        }else{
+            //拿头两个点和相机位置点 计算需要平移的两个法向量
+             point_1 = obj.parameters.basePoints[i-1];
+             point_2 = obj.parameters.basePoints[i];
+        }
+
+        //得到俩个方向的向量
+        let vector_1 =  point_1.clone().add(point_3.clone().negate());
+        let vector_2 =  point_2.clone().add(point_3.clone().negate());
+        //得到整个线扩张的两个法向量
+        let targer_vector_1 = (vector_2.clone().cross(vector_1)).normalize();
+        let targer_vector_2 = targer_vector_1.clone().negate();
+
         //保存基准点
         basePoints.push(point.x);
         basePoints.push(point.y);
@@ -149,8 +161,6 @@ function buildPlane(obj){
         indices.push(2*i+3);
     }
 
-
-
     // build geometry
 
     obj.setIndex( indices );
@@ -162,5 +172,4 @@ function buildPlane(obj){
 
 }
 
-
-export { RibbonGeometry , RibbonBufferGeometry};
+export { LineGeometry , LineBufferGeometry};

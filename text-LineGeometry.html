@@ -25,12 +25,12 @@
 </body>
 <script type="module">
     import { LThree } from './LThree/LThree.js';
-    import { RibbonGeometry,RibbonBufferGeometry } from './LThree/mysrc/RibbonGeometry.js';
+    import { LineGeometry,LineBufferGeometry } from './LThree/mysrc/LineGeometry.js';
     import * as THREE from './LThree/build/three.module.js';
     var three = new LThree({ id: 'webgl' });
     three.initStats();
    
-    three.camera.position.set(0, 25, 20);
+    three.camera.position.set(0, 30, 30);
     three.camera.lookAt(three.scene.position);
     three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
 
@@ -42,13 +42,18 @@
      );
 
     var points = curve.getPoints( 100 );
-   // let points = [
-       //     new THREE.Vector2( 0, 1 ),
-        //    new THREE.Vector2( 5, 1 ),
-        //    new THREE.Vector2( 10, 1 ),
-    	//];
-    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:true});
-    var g =new RibbonBufferGeometry(points,2,three.camera.position);
+//    let points = [
+//            new THREE.Vector2( 0, 1 ),
+//            new THREE.Vector2( 5, 10 ),
+//            new THREE.Vector2( 10, 1 ),
+//            new THREE.Vector2( 15, 1 ),
+//            new THREE.Vector2( 20, 5 ),
+//            new THREE.Vector2( 25, 1 ),
+//            new THREE.Vector2( 30, 1 ),
+//            new THREE.Vector2( 35, 5 )
+//     	];
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:false});
+    var g =new LineBufferGeometry(points,2,three.camera.position);
     var cube = new THREE.Mesh(g, material);
 
     var axesHelper = new THREE.AxesHelper( 5 );
