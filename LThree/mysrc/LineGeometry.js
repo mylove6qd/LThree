@@ -109,13 +109,16 @@ function buildPlane(obj){
         let targer_vector_1;
         let targer_vector_2;
 
+        //切线方向
+        let vector_tangent;
+
         //如果是第一个点 他的法向量就是自己和后一个以及相机位置构成的平面的法向量
         if(i==0){
             let point_1 = obj.parameters.basePoints[0];
             let point_2 = obj.parameters.basePoints[1];
 
             //获得第一个点的切线方向
-            let vector_tangent = point_1.clone().negate().add(point_2.clone());
+            vector_tangent = point_1.clone().negate().add(point_2.clone());
 
             //得到整个线扩张的两个法向量
             targer_vector_1 = (vector_tangent.clone().cross(cameraN.clone())).normalize();
@@ -125,7 +128,7 @@ function buildPlane(obj){
             let point_2 = obj.parameters.basePoints[i];
 
             //获得第一个点的切线方向
-            let vector_tangent = point_1.clone().negate().add(point_2.clone());
+            vector_tangent = point_1.clone().negate().add(point_2.clone());
 
             //得到整个线扩张的两个法向量
             targer_vector_1 = (vector_tangent.clone().cross(cameraN.clone())).normalize();
@@ -139,7 +142,7 @@ function buildPlane(obj){
             let vector_1 =  point_1.clone().negate().add(point_center.clone());
             let vector_2 =  point_center.clone().negate().add(point_2.clone());
 
-            let vector_tangent = vector_1.normalize().add(vector_2.normalize());
+            vector_tangent = vector_1.normalize().add(vector_2.normalize());
 
             //得到整个线扩张的两个法向量
             targer_vector_1 = (vector_tangent.clone().cross(cameraN)).normalize();
@@ -165,13 +168,14 @@ function buildPlane(obj){
         vertices.push(point_f.z);
 
         //保存点法向量
-        normals.push(point_z.clone().add(point.clone().negate()).normalize().x);
-        normals.push(point_f.clone().add(point.clone().negate()).normalize().y);
+        normals.push(obj.parameters.cameraNormals.clone().negate().x);
+        normals.push(obj.parameters.cameraNormals.clone().negate().y);
+        normals.push(obj.parameters.cameraNormals.clone().negate().z);
 
         //保存uv
-        uvs.push(i/obj.parameters.basePoints.length-1);
+        uvs.push(i/(obj.parameters.basePoints.length-1));
         uvs.push(1);
-        uvs.push(i/obj.parameters.basePoints.length-1);
+        uvs.push(i/(obj.parameters.basePoints.length-1));
         uvs.push(0);
 
     }
