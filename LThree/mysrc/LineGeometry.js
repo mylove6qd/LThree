@@ -11,8 +11,8 @@ import { Vector3 } from '../src/math/Vector3.js';
 
 class LineGeometry extends Geometry{
   
-    //basePoints 基础点数组 [Vector2] / [Vector3]  width 条带宽度   相机点 cameraPosition
-    constructor(basePoints,width,cameraPosition){
+    //basePoints 基础点数组 [Vector2] / [Vector3]  width 条带宽度   相机点 cameraLookAt
+    constructor(basePoints,width,cameraLookAt){
         basePoints = processBasePoints(basePoints);
 
         super();
@@ -22,10 +22,10 @@ class LineGeometry extends Geometry{
         this.parameters = {
             basePoints:basePoints,
             width:width,
-            cameraPosition:cameraPosition
+            cameraLookAt:cameraLookAt
         }
 
-        this.fromBufferGeometry( new LineBufferGeometry( basePoints,width,cameraPosition ) );
+        this.fromBufferGeometry( new LineBufferGeometry( basePoints,width,cameraLookAt ) );
 
 		this.mergeVertices();
     }
@@ -36,7 +36,7 @@ class LineGeometry extends Geometry{
 
 class LineBufferGeometry extends BufferGeometry{
   
-    constructor(basePoints,width,cameraPosition){
+    constructor(basePoints,width,cameraLookAt){
         basePoints = processBasePoints(basePoints);
 
         super();
@@ -46,7 +46,7 @@ class LineBufferGeometry extends BufferGeometry{
         this.parameters = {
             basePoints:basePoints,
             width:width,
-            cameraPosition:cameraPosition
+            cameraLookAt:cameraLookAt
         }
 
         buildPlane(this);
@@ -82,42 +82,66 @@ function buildPlane(obj){
     const normals = [];
     const uvs = [];
     const basePoints = [];
-    const cameraPosition = [];
+    const cameraLookAt = [];
 
     //半径
     let width = obj.parameters.width/2;
 
-    let point_3 = obj.parameters.cameraPosition;
+    let point_3 = obj.parameters.cameraLookAt;
 
     //保存相机点位置
-    cameraPosition.push(point_3.x);
-    cameraPosition.push(point_3.y);
-    cameraPosition.push(point_3.z);
+    cameraLookAt.push(point_3.x);
+    cameraLookAt.push(point_3.y);
+    cameraLookAt.push(point_3.z);
 
     //计算点
     for(let i = 0;i<obj.parameters.basePoints.length;i++){
         //基准点
         let point = obj.parameters.basePoints[i];
 
-        let point_1;
-        let point_2;
-        //如果是第一个点计算 就去它自身和后面的 否则就去自身和前面的
-        if(i==0){
-            //拿头两个点和相机位置点 计算需要平移的两个法向量
-             point_1 = obj.parameters.basePoints[0];
-             point_2 = obj.parameters.basePoints[1];
-        }else{
-            //拿头两个点和相机位置点 计算需要平移的两个法向量
-             point_1 = obj.parameters.basePoints[i-1];
-             point_2 = obj.parameters.basePoints[i];
-        }
+        //两个方向的法向量
+        let targer_vector_1;
+        let targer_vector_2;
 
-        //得到俩个方向的向量
-        let vector_1 =  point_1.clone().add(point_3.clone().negate());
-        let vector_2 =  point_2.clone().add(point_3.clone().negate());
-        //得到整个线扩张的两个法向量
-        let targer_vector_1 = (vector_2.clone().cross(vector_1)).normalize();
-        let targer_vector_2 = targer_vector_1.clone().negate();
+        //如果是第一个点 他的法向量就是自己和后一个以及相机位置构成的平面的法向量
+        if(i==0){
+            let point_1 = obj.parameters.basePoints[0];
+            let point_2 = obj.parameters.basePoints[1];
+            //得到俩个方向的向量
+            let vector_1 =  point_1.clone().add(point_3.clone().negate());
+            let vector_2 =  point_2.clone().add(point_3.clone().negate());
+            //得到整个线扩张的两个法向量
+            targer_vector_1 = (vector_2.clone().cross(vector_1)).normalize();
+            targer_vector_2 = targer_vector_1.clone().negate();
+        }else if(i==obj.parameters.basePoints.length-1){
+            //组后一个点就是最后和倒数第二个点
+            let point_1 = obj.parameters.basePoints[i-1];
+            let point_2 = obj.parameters.basePoints[i];
+            //得到俩个方向的向量
+            let vector_1 =  point_1.clone().add(point_3.clone().negate());
+            let vector_2 =  point_2.clone().add(point_3.clone().negate());
+            //得到整个线扩张的两个法向量
+            targer_vector_1 = (vector_2.clone().cross(vector_1)).normalize();
+            targer_vector_2 = targer_vector_1.clone().negate();
+        }else {
+            //其他点
+            let point_1 = obj.parameters.basePoints[i-1];
+            let point_2 = obj.parameters.basePoints[i+1];
+            let point_center = obj.parameters.basePoints[i];
+
+            let vector_1 =  point_1.clone().negate().add(point_center.clone());
+            let vector_2 =  point_center.clone().negate().add(point_2.clone());
+
+            let vector_tangent = vector_1.normalize().add(vector_2.normalize());
+
+            //当前点到相机点的向量
+            let vector_camera = point_center.clone().negate().add(point_3.clone()).negate();
+
+            //得到整个线扩张的两个法向量
+            targer_vector_1 = (vector_tangent.clone().cross(vector_camera)).normalize();
+            targer_vector_2 = targer_vector_1.clone().negate();
+
+        }
 
         //保存基准点
         basePoints.push(point.x);
@@ -168,7 +192,7 @@ function buildPlane(obj){
     obj.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
     obj.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) ); 
     obj.setAttribute( 'basePoints', new Float32BufferAttribute( basePoints, 3 ) );
-    obj.setAttribute( 'cameraPosition', new Float32BufferAttribute( cameraPosition, 3 ) );
+    obj.setAttribute( 'cameraLookAt', new Float32BufferAttribute( cameraLookAt, 3 ) );
 
 }
 
