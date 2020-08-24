@@ -25,13 +25,13 @@
 </body>
 <script type="module">
     import { LThree } from './LThree/LThree.js';
-    import { LineGeometry,LineBufferGeometry } from './LThree/mysrc/LineGeometry.js';
+    import { LineGeometry,LineBufferGeometry,pointAlgorithm } from './LThree/mysrc/LineGeometry.js';
     import * as THREE from './LThree/build/three.module.js';
     var three = new LThree({ id: 'webgl' });
     window.three = three;
     three.initStats();
    
-    three.camera.position.set(20, 20, 20);
+    three.camera.position.set(0, 1, 40);
     three.camera.lookAt(three.scene.position);
     three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
 
@@ -53,9 +53,13 @@
 //            new THREE.Vector2( 30, 1 ),
 //            new THREE.Vector2( 35, 1 )
 //     	];
-    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:true});
-    var g =new LineBufferGeometry(points,2,three.camera);
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:false,side:THREE.FrontSide});
+    var g =new LineBufferGeometry(points,1,three);
     var cube = new THREE.Mesh(g, material);
+
+    for(let i = 0;i<100;i++){
+        three.scene.add(new THREE.Mesh(new LineBufferGeometry(points,1,three), material));
+    }
 
     var axesHelper = new THREE.AxesHelper( 5 );
     three.scene.add( axesHelper );
