@@ -5,7 +5,8 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Stats } from 'three/examples/jsm/libs/stats.module.js';
+import  Stats  from 'three/examples/jsm/libs/stats.module.js';
+import  LUtils  from './LUtils';
 THREE.Object3D.prototype.on = function (type, fn) {
     this[type] = fn;
 }
@@ -17,10 +18,6 @@ class LThree {
 
     //构造函数
     constructor(opt) {
-
-
-
-
 
         //管理render事件的map
         this._renderEventMap = new Map();
@@ -182,7 +179,7 @@ class LThree {
         });
     }
 }
-export { LThree ,THREE };
+export { LThree ,THREE ,LUtils };
 
 //------------------------------------------------------------------------------------------utils function 
 //过滤射线的所有透明对象 所见即所得

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script type="module">
+    import { LThree } from './LThree/LThree.js';
+    import { LineGeometry,LineBufferGeometry,pointAlgorithm } from './LThree/mysrc/LineGeometry.js';
+    import * as THREE from './LThree/build/three.module.js';
+    var three = new LThree({ id: 'webgl' });
+    window.three = three;
+    three.initStats();
+   
+    three.camera.position.set(0, 1, 40);
+    three.camera.lookAt(three.scene.position);
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+
+    var curve = new THREE.CubicBezierCurve(
+	     new THREE.Vector2( -10, 0 ),
+	     new THREE.Vector2( -5, 15 ),
+	     new THREE.Vector2( 20, 15 ),
+	     new THREE.Vector2( 10, 0 )
+     );
+
+   let points = curve.getPoints( 100 );
+//    let points = [
+//            new THREE.Vector2( 0, 1 ),
+//            new THREE.Vector2( 5, 1 ),
+//            new THREE.Vector2( 10, 1 ),
+//            new THREE.Vector2( 15, 1 ),
+//            new THREE.Vector2( 20, 1 ),
+//            new THREE.Vector2( 25, 1 ),
+//            new THREE.Vector2( 30, 1 ),
+//            new THREE.Vector2( 35, 1 )
+//     	];
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:false,side:THREE.FrontSide});
+    var g =new LineBufferGeometry(points,1,three);
+    var cube = new THREE.Mesh(g, material);
+
+    for(let i = 0;i<100;i++){
+        three.scene.add(new THREE.Mesh(new LineBufferGeometry(points,1,three), material));
+    }
+
+    var axesHelper = new THREE.AxesHelper( 5 );
+    three.scene.add( axesHelper );
+
+    three.scene.add(cube);
+
+    three.update();
+</script>
+
+</html>

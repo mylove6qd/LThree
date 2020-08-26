@@ -8,7 +8,7 @@ module.exports={
 		path:path.resolve(__dirname,'./dist'),  //自定义输出文件所在目录
 		libraryTarget: 'umd'
     },
-	mode: 'production',
+	mode: 'development',
 	module: {
 		rules: [
 			{
