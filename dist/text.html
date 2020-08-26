@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script>
+    var three = new LThree({ id: 'webgl' });
+    three.camera.position.set(-4, 1, 1);
+    three.camera.lookAt(three.scene.position);
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(Math.random() * 0xffffff),wireframe:true });
+    var cube = new THREE.Mesh(geometry, material);
+    cube.on('dblclick', function () { 
+        console.log(this);
+       alert('我是母体');
+    });
+
+    let cubeb = cube.clone()
+	  cubeb.on('dblclick', function () { 
+       alert('我是拷贝a');
+    });
+    let cubebb = cube.clone()
+	  cubebb.on('dblclick', function () { 
+       alert('我是拷贝b');
+    });
+    cubeb.translateY(1.5);
+    cubebb.translateY(-1.5);
+    let group = new THREE.Group()
+    group.add(cube)
+    group.add(cubeb)
+    group.add(cubebb)
+    group.on('click', function (event) { 
+        //关闭冒泡
+        three.stopPropagation();
+        let color = new THREE.Color(Math.random() * 0xffffff);
+        this.children[0].material.color = color 
+    });
+
+    three.scene.add(group);
+
+    three.scene.on('click', function (event) { 
+        three.renderer.setClearColor(new THREE.Color(Math.random() * 0xffffff), 1.0);
+    });
+    
+    three.update();
+   
+</script>
+
+</html>
