@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import  Stats  from 'three/examples/jsm/libs/stats.module.js';
 import  LUtils  from './LUtils';
+import { LineGeometry,LineBufferGeometry } from './core/LineGeometry.js';
 THREE.Object3D.prototype.on = function (type, fn) {
     this[type] = fn;
 }
@@ -18,9 +19,12 @@ class LThree {
 
     //构造函数
     constructor(opt) {
-
+        //是否视角移动
+        this._isControlsChange = false;
         //管理render事件的map
         this._renderEventMap = new Map();
+        //管理renderChange事件的map
+        this._renderChangeEventMap = new Map();
         //是否冒泡
         this._isPropagation = true;
         //按下的对象
@@ -91,10 +95,21 @@ class LThree {
             targer = targer == undefined ? true : targer;
             this._renderEventMap.set(eventName, [fn, targer]);
         }
+        this.addRenderChangeEvent = function(eventName, fn, targer){
+            targer = targer == undefined ? true : targer;
+            if(!this._renderEventMap.has(eventName)){
+                this._renderChangeEventMap.set(eventName, [fn, targer]);
+            }
+        }
         //删除redner事件
         this.removeRenderEvent = function (eventName) {
             if (this._renderEventMap.has(eventName)) {
                 this._renderEventMap.delete(eventName);
+                return;
+            }
+            if (this.addRenderChangeEvent.has(eventName)) {
+                this.addRenderChangeEvent.delete(eventName);
+                return;
             }
         };
         //阻止事件冒泡
@@ -103,12 +118,22 @@ class LThree {
         }
         //渲染方法
         this.render = function (time) {
+            if( this._isControlsChange ){
+                for (let [key, value] of this._renderChangeEventMap) {
+                    if (value[1]) {
+                        value[0](time);
+                    }
+                }
+            }
 
             for (let [key, value] of this._renderEventMap) {
                 if (value[1]) {
                     value[0](time);
                 }
             }
+
+            this._isControlsChange = false;
+
             this.renderer.render(this.scene, this.camera);
         };
         //更新方法
@@ -125,6 +150,7 @@ class LThree {
             camera: new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000),
             renderer: new THREE.WebGLRenderer({ antialias: true, alpha: true })
         }, opt)
+
         //基本配置
         let controls = opt.controls || new OrbitControls(option.camera, option.renderer.domElement);
         this.scene = option.scene;
@@ -137,6 +163,11 @@ class LThree {
         this.controls.target.x = this.scene.position.x;
         this.controls.target.y = this.scene.position.y;
         this.controls.target.z = this.scene.position.z;
+        //视角变化的才出发
+        this.controls.addEventListener('change', ()=>{
+            this._isControlsChange = true;
+        });
+
         this.container = document.getElementById(option.id);
         this.container.appendChild(this.renderer.domElement);
         //双击事件
@@ -179,7 +210,12 @@ class LThree {
         });
     }
 }
-export { LThree ,THREE ,LUtils };
+export {LThree,
+        THREE,
+        LUtils,
+        LineGeometry,
+        LineBufferGeometry
+    };
 
 //------------------------------------------------------------------------------------------utils function 
 //过滤射线的所有透明对象 所见即所得
