@@ -67,6 +67,9 @@
 
     three.addRenderEvent('b',(time)=>{
         materialObj.uniforms.dashOffset.value=  1-(time/9000) % 1.0;
+        line.rotation.y += 0.01;
+        console.log( line.geometry.attributes.position.array[0])
+       // debugger
     },true);
       
     three.update();

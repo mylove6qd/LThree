@@ -41,25 +41,28 @@
 	     new THREE.Vector2( 10, 0 )
      );
 
-   let points = curve.getPoints( 100 );
+     let points = curve.getPoints( 8000 );
 //    let points = [
 //            new THREE.Vector2( 0, 1 ),
 //            new THREE.Vector2( 5, 1 ),
-//            new THREE.Vector2( 10, 1 ),
-//            new THREE.Vector2( 15, 1 ),
-//            new THREE.Vector2( 20, 1 ),
-//            new THREE.Vector2( 25, 1 ),
-//            new THREE.Vector2( 30, 1 ),
-//            new THREE.Vector2( 35, 1 )
+//            new THREE.Vector2( 10, 1 )
+//         //    new THREE.Vector2( 15, 1 ),
+//         //    new THREE.Vector2( 20, 1 ),
+//         //    new THREE.Vector2( 25, 1 ),
+//         //    new THREE.Vector2( 30, 1 ),
+//         //    new THREE.Vector2( 35, 1 )
 //     	];
-    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:false,side:THREE.FrontSide});
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:true,side:THREE.FrontSide});
     var g =new LineBufferGeometry(points,1,three);
     var cube = new THREE.Mesh(g, material);
-
-    for(let i = 0;i<100;i++){
-        three.scene.add(new THREE.Mesh(new LineBufferGeometry(points,1,three), material));
-    }
-
+//10000 4帧
+    // for(let i = 0;i<20;i++){
+    //     three.scene.add(new THREE.Mesh(new LineBufferGeometry(points,1,three), material));
+    // }
+    three.addRenderEvent('a', function () {
+       cube.rotation.y += 0.01;
+       cube.geometry.updataMatrix(cube);
+    }, true);
     var axesHelper = new THREE.AxesHelper( 5 );
     three.scene.add( axesHelper );
 
