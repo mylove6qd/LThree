@@ -6,9 +6,7 @@ import { Geometry } from 'three/src/core/Geometry.js';
 import { BufferGeometry } from 'three/src/core/BufferGeometry.js';
 import { Float32BufferAttribute } from 'three/src/core/BufferAttribute.js';
 import { Vector3 } from 'three/src/math/Vector3.js';
-import { Matrix3 } from 'three/src/math/Matrix3.js';
 import { GPU } from 'gpu.js';
-import { Vector4, Matrix4 } from 'three';
 
 
 
@@ -33,9 +31,11 @@ class LineGeometry extends Geometry {
             cameraPosition: cameraPosition
         }
 
+
         this.fromBufferGeometry(new LineBufferGeometry(basePoints, width, three));
 
         this.mergeVertices();
+
     }
 
 }
@@ -61,8 +61,9 @@ class LineBufferGeometry extends BufferGeometry {
             cameraPosition: cameraPosition
         }
 
-         buildPlane(this);
-       //buildPlaneForGPU(this)
+
+        buildPlane(this);
+        //buildPlaneForGPU(this)
         //计算索引
         //面数
         const indices = [];
@@ -96,27 +97,30 @@ class LineBufferGeometry extends BufferGeometry {
         //绑定事件
         bindEvent(this, three)
 
-        this.updataMatrix = function(obj){
-            
-           let matrix = obj.matrix;
+        this.updataMatrix = function (obj) {
 
-            let points = [];
-            for(let i =0;i<this.parameters.basePoints.length;i++){
-                let a = this.parameters.basePoints[i].clone();
-                let v = new Vector4(a.x,a.y,a.z,0).applyMatrix4(matrix);
-               
-                //  points.push(v);
-                points.push(new Vector3(v.x,v.y,v.z));
+            let m = new THREE.Matrix4();
+
+            //变换的逆矩阵
+            let matrix = obj.matrix.clone().getInverse(obj.matrix.clone());
+
+            let a = []
+            for (let i = 0; i < this.parameters.basePoints.length; i++) {
+                a.push(this.parameters.basePoints[i].clone().applyMatrix4(matrix));
             }
-            //this.parameters.basePoints = points
-           buildPlane(this,points);
-     
-           obj.applyMatrix4(new Matrix4().set(
-            1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            0,0,0,1
-        ))
+            buildPlane(this, a)
+            let vertices = []
+
+            for (let i = 0; i < this.attributes.position.array.length - 2; i += 3) {
+
+                vertices.push(this.attributes.position.array[i] * matrix['elements'][0] + this.attributes.position.array[i + 1] * matrix['elements'][0 + 4] + this.attributes.position.array[i + 2] * matrix['elements'][0 + 4 + 4]);
+                vertices.push(this.attributes.position.array[i] * matrix['elements'][0 + 1] + this.attributes.position.array[i + 1] * matrix['elements'][0 + 4 + 1] + this.attributes.position.array[i + 2] * matrix['elements'][0 + 4 + 4 + 1]);
+                vertices.push(this.attributes.position.array[i] * matrix['elements'][0 + 1 + 1] + this.attributes.position.array[i + 1] * matrix['elements'][0 + 4 + 1 + 1] + this.attributes.position.array[i + 2] * matrix['elements'][0 + 4 + 4 + 1 + 1]);
+
+            }
+
+            obj.geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+
         }
 
     }
@@ -155,7 +159,7 @@ function buildPlaneForGPU(obj) {
     //半径
     let width = obj.parameters.width / 2;
 
-  
+
 
     let pointPosition = [];
     const cameraPosition = [obj.parameters.cameraPosition.x, obj.parameters.cameraPosition.y, obj.parameters.cameraPosition.z];
@@ -168,11 +172,11 @@ function buildPlaneForGPU(obj) {
     // calPoint.destroy();
     // gpu.destroy();
 
-    for(let i=0;i<pointPosition.length;i++){
+    for (let i = 0; i < pointPosition.length; i++) {
         vertices.push(out[0][i][0]);
         vertices.push(out[0][i][1]);
         vertices.push(out[0][i][2]);
-        
+
         normals.push(out[1][i][0]);
         normals.push(out[1][i][1]);
         normals.push(out[1][i][2]);
@@ -182,7 +186,7 @@ function buildPlaneForGPU(obj) {
     obj.setAttribute('normal', new Float32BufferAttribute(normals, 3));
 }
 
-function buildPlane(obj,pointOther) {
+function buildPlane(obj, baspoint) {
 
     // buffers
     const vertices = [];
@@ -191,14 +195,17 @@ function buildPlane(obj,pointOther) {
     //半径
     let width = obj.parameters.width / 2;
     let points = [];
-    if(pointOther==undefined){
+
+    if (baspoint == undefined) {
         points = obj.parameters.basePoints;
-    }else{
-        points = pointOther;
+    } else {
+        points = baspoint;
     }
 
+
+
     //计算点
-    for (let i = 0; i <points.length; i++) {
+    for (let i = 0; i < points.length; i++) {
 
         let point_1;
         let point_2;
@@ -246,7 +253,6 @@ function buildPlane(obj,pointOther) {
 
     }
 
-
     obj.setAttribute('position', new Float32BufferAttribute(vertices, 3));
     obj.setAttribute('normal', new Float32BufferAttribute(normals, 3));
 
@@ -278,14 +284,14 @@ function pointAlgorithm(point_1, point_center, point_2, cameraN, width) {
 function bindEvent(obj, three) {
     three.addRenderChangeEvent(obj.uuid, (time) => {
         buildPlane(obj);
-       // buildPlaneForGPU(obj)
+        // buildPlaneForGPU(obj)
     }, true);
 }
 
 export { LineBufferGeometry };
 
 let gpu = new GPU();
-let calPoint = gpu.createKernel(function (pointPosition, cameraPosition, width,size) {
+let calPoint = gpu.createKernel(function (pointPosition, cameraPosition, width, size) {
     //计算方法
     //向量的反向
     function negate(array) {
@@ -298,7 +304,7 @@ let calPoint = gpu.createKernel(function (pointPosition, cameraPosition, width,s
     //向量归一化
     function normalize(array) {
         let value = Math.sqrt(array[0] * array[0] + array[1] * array[1] + array[2] * array[2]);
-        if(value==0){
+        if (value == 0) {
             return array;
         }
         return [array[0] / value, array[1] / value, array[2] / value];
@@ -314,11 +320,11 @@ let calPoint = gpu.createKernel(function (pointPosition, cameraPosition, width,s
 
     }
     //向量点乘法 
-    function multiplyScalar(array,width){
-        return [array[0]*width,array[1]*width,array[2]*width];
+    function multiplyScalar(array, width) {
+        return [array[0] * width, array[1] * width, array[2] * width];
     }
 
-  
+
 
     let widths = width;
     let cameraPosition1 = [cameraPosition[0], cameraPosition[1], cameraPosition[2]];
@@ -329,55 +335,55 @@ let calPoint = gpu.createKernel(function (pointPosition, cameraPosition, width,s
     let point_center = [0, 0, 0];
     let cameraN = [0, 0, 0];
 
-    if(this.thread.x>size){
+    if (this.thread.x > size) {
         return sum;
-    }else{
-
-    if (this.thread.x == 0 || this.thread.x == 1) {
-        point_1 = [pointPosition[0][0], pointPosition[0][1], pointPosition[0][2]];
-        point_2 = [pointPosition[3][0], pointPosition[3][1], pointPosition[3][2]];
-        point_center = point_1;
-        cameraN = add(negate(point_center), cameraPosition1);
-    } else if (this.thread.x == size - 1 || this.thread.x == size - 2) {
-        point_1 = [pointPosition[this.thread.x - 2][0], pointPosition[this.thread.x - 2][1], pointPosition[this.thread.x - 2][2]];
-        point_2 = [pointPosition[this.thread.x][0], pointPosition[this.thread.x][1], pointPosition[this.thread.x][2]];
-        point_center = point_1;
-        cameraN = add(negate(point_center), cameraPosition1);
     } else {
-       
-        point_1 = [pointPosition[this.thread.x - 2][0], pointPosition[this.thread.x - 2][1], pointPosition[this.thread.x - 2][2]];
-        point_2 = [pointPosition[this.thread.x + 2][0], pointPosition[this.thread.x + 2][1], pointPosition[this.thread.x + 2][2]];
-        point_center = [pointPosition[this.thread.x][0], pointPosition[this.thread.x][1], pointPosition[this.thread.x][2]];
-        cameraN = add(negate(point_center), cameraPosition1);
-    
-    }
-    
-    if (this.thread.y == 0) {
 
-        let vector_1 = add(negate(point_1), point_center);
-        let vector_2 = add(negate(point_center), point_2);
-
-        let vector_tangent = add(normalize(vector_1), normalize(vector_2));
-
-        let targer_vector_2 = normalize(cross(vector_tangent,cameraN));
-        let targer_vector_1 = negate(targer_vector_2);
-
-        //计算点
-        if (this.thread.x % 2 == 0) {
-            //上点
-            sum = add(multiplyScalar(targer_vector_1,widths),point_center);
+        if (this.thread.x == 0 || this.thread.x == 1) {
+            point_1 = [pointPosition[0][0], pointPosition[0][1], pointPosition[0][2]];
+            point_2 = [pointPosition[3][0], pointPosition[3][1], pointPosition[3][2]];
+            point_center = point_1;
+            cameraN = add(negate(point_center), cameraPosition1);
+        } else if (this.thread.x == size - 1 || this.thread.x == size - 2) {
+            point_1 = [pointPosition[this.thread.x - 2][0], pointPosition[this.thread.x - 2][1], pointPosition[this.thread.x - 2][2]];
+            point_2 = [pointPosition[this.thread.x][0], pointPosition[this.thread.x][1], pointPosition[this.thread.x][2]];
+            point_center = point_1;
+            cameraN = add(negate(point_center), cameraPosition1);
         } else {
-            //下点
-            sum = add(multiplyScalar(targer_vector_2,widths),point_center);
-        }
-    }
-    if (this.thread.y == 1) {
-        //计算法向量
-        sum = cameraN;
-    }
 
-    return sum;
-}
+            point_1 = [pointPosition[this.thread.x - 2][0], pointPosition[this.thread.x - 2][1], pointPosition[this.thread.x - 2][2]];
+            point_2 = [pointPosition[this.thread.x + 2][0], pointPosition[this.thread.x + 2][1], pointPosition[this.thread.x + 2][2]];
+            point_center = [pointPosition[this.thread.x][0], pointPosition[this.thread.x][1], pointPosition[this.thread.x][2]];
+            cameraN = add(negate(point_center), cameraPosition1);
+
+        }
+
+        if (this.thread.y == 0) {
+
+            let vector_1 = add(negate(point_1), point_center);
+            let vector_2 = add(negate(point_center), point_2);
+
+            let vector_tangent = add(normalize(vector_1), normalize(vector_2));
+
+            let targer_vector_2 = normalize(cross(vector_tangent, cameraN));
+            let targer_vector_1 = negate(targer_vector_2);
+
+            //计算点
+            if (this.thread.x % 2 == 0) {
+                //上点
+                sum = add(multiplyScalar(targer_vector_1, widths), point_center);
+            } else {
+                //下点
+                sum = add(multiplyScalar(targer_vector_2, widths), point_center);
+            }
+        }
+        if (this.thread.y == 1) {
+            //计算法向量
+            sum = cameraN;
+        }
+
+        return sum;
+    }
 }, {
     //constants: { size: pointPosition.length },
     output: [16384, 2]
