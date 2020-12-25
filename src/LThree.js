@@ -144,6 +144,14 @@ class LThree {
             this.render(time);
         };
 
+        //直接看向某处
+        this.lookAt = function(vec3){
+            this.camera.lookAt(vec3);
+            this.controls.target.x = vec3.x;
+            this.controls.target.y = vec3.y;
+            this.controls.target.z = vec3.z;
+        }
+
         let option = Object.assign({
             id: opt.id,
             scene: new THREE.Scene(),
