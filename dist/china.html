@@ -41,7 +41,7 @@
 
     //线
     var helper = new THREE.GridHelper(40000, 10000, 0xffffff, 0xffffff);
-   // three.scene.add(helper);
+    // three.scene.add(helper);
 
 
 
@@ -118,11 +118,12 @@
 
         let features = data.features;
 
+        let lineGroup = new THREE.Group();
+        let contextGroup = new THREE.Group()
+
         for (let i = 0; i < features.length; i++) {
             let geometry = features[i].geometry;
             if (geometry.type == 'MultiPolygon') {
-                let lineGroup = new THREE.Group();
-                let contextGroup = new THREE.Group()
                 let coordinates = geometry.coordinates;
                 for (let k = 0; k < coordinates.length; k++) {
                     //经纬度数据
@@ -162,12 +163,9 @@
                         contextGroup.add(context);
                     }
                 }
-                three.scene.add(lineGroup)
-                three.scene.add(contextGroup)
+
             }
             if (geometry.type == 'Polygon') {
-                let lineGroup = new THREE.Group();
-                let contextGroup = new THREE.Group()
                 let coordinates = geometry.coordinates;
                 for (let k = 0; k < coordinates.length; k++) {
                     //经纬度数据
@@ -207,9 +205,9 @@
                         contextGroup.add(context);
                     }
                 }
-                three.scene.add(lineGroup)
-                three.scene.add(contextGroup)
             }
+            three.scene.add(lineGroup)
+            three.scene.add(contextGroup)
 
         }
 
