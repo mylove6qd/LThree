@@ -163,6 +163,7 @@ class LThree {
         let controls = opt.controls || new OrbitControls(option.camera, option.renderer.domElement);
         this.scene = option.scene;
         this.camera = option.camera;
+        this.camera.position.set(1, 1, 0);
         this.renderer = option.renderer;
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
