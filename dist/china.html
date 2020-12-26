@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script src="./data/data.js"></script>
+<script src="./plus/LineMaterial.js"></script>
+<script src="./plus/LineSegmentsGeometry.js"></script>
+<script src="./plus/LineSegments2.js"></script>
+<script src="./plus/LineGeometry.js"></script>
+<script src="./plus/Line2.js"></script>
+<script>
+    var three = new LThree({ id: 'webgl' });
+    three.camera.position.set(120.87436306922761, 97.08646666545671, -36.33511252219169);
+    three.lookAt(new THREE.Vector3(120.87436306922761, 0, -36.33511252219169));
+
+
+    three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
+
+    //线
+    var helper = new THREE.GridHelper(40000, 10000, 0xffffff, 0xffffff);
+   // three.scene.add(helper);
+
+
+
+    // const  color1 = new THREE.Color('#79d4b9');
+    //         const  color2 = new THREE.Color('#07D46E');
+    //         const color = [
+    //             color1.r, color1.g,color1.b,
+    //             color2.r, color2.g,color2.b
+    //         ]
+    //         const geometry = new THREE.LineGeometry()
+    //             geometry.setPositions( [
+    //               10,10,10,
+    //                 90,90,90
+    //             ])
+    //            // geometry.setColors( color )
+    //             const  matLine = new THREE.LineMaterial( {
+    //                 color: 0x79d4b9,
+    // 				linewidth: 5, // in pixels
+    // 				//vertexColors: true,
+    // 				dashed: false
+    //             });
+    //             matLine.resolution.set( window.innerWidth, window.innerHeight )
+
+
+    //             const  line = new THREE.Line2( geometry, matLine )
+
+    //             line.computeLineDistances();
+
+    //             three.scene.add(line);
+
+
+    loadGeoJson(chinaAll);
+
+    three.update();
+
+    function loadGeoJson(data) {
+
+        let polygonBorderMaterial = new THREE.LineMaterial({
+            color: 0x00FFFF,
+            linewidth: 3,
+            dashed: false
+        })
+        polygonBorderMaterial.resolution.set(window.innerWidth, window.innerHeight)
+
+        let polygonContextMaterial = new THREE.MeshBasicMaterial({
+            color: 0x2F4F4F,
+            side: THREE.BackSide
+        })
+
+        //GeoJson 对象材质定义   
+        let GeoJsonObj = {
+            Point: null,
+            MultiPoint: null,
+            LineString: null,
+            MultiLineString: null,
+            Polygon: {
+                border: polygonBorderMaterial,
+                context: polygonContextMaterial
+            },
+            MultiPolygon: {
+                border: polygonBorderMaterial,
+                context: polygonContextMaterial
+            },
+        };
+
+        if (data.constructor != Object) {
+            console.error('GeoJson not object');
+            return;
+        }
+        if (!data.hasOwnProperty('type') || !data.hasOwnProperty('features') || data.type != 'FeatureCollection') {
+            console.error('GeoJson data error');
+            return;
+        }
+
+        let features = data.features;
+
+        for (let i = 0; i < features.length; i++) {
+            let geometry = features[i].geometry;
+            if (geometry.type == 'MultiPolygon') {
+                let lineGroup = new THREE.Group();
+                let contextGroup = new THREE.Group()
+                let coordinates = geometry.coordinates;
+                for (let k = 0; k < coordinates.length; k++) {
+                    //经纬度数据
+                    let vertices = [];
+                    //样条曲线对象
+                    let shape = new THREE.Shape();
+                    //阿里的数据都是单层的 所以直接拿第一个数组
+                    let Polygon = coordinates[k][0];
+                    for (let m = 0; m < Polygon.length; m++) {
+                        let lon = Polygon[m][0];
+                        let lat = Polygon[m][1];
+                        let Mercator = lonlatToMercator(lon, lat);
+                        vertices.push(Mercator.x, Mercator.y + 0.01, Mercator.z);
+                        //样条曲线
+                        if (m == 0) {
+                            shape.moveTo(Mercator.x, Mercator.z)
+                        } else {
+                            shape.lineTo(Mercator.x, Mercator.z)
+                        }
+                    }
+                    //添加boder
+                    let polygonBorderMaterial = GeoJsonObj[geometry.type].border;
+                    if (polygonBorderMaterial != null) {
+                        let lineGeometry = new THREE.LineGeometry();
+                        lineGeometry.setPositions(vertices);
+                        let line = new THREE.Line2(lineGeometry, polygonBorderMaterial);
+                        line.computeLineDistances();
+                        lineGroup.add(line);
+                    }
+
+                    //添加context
+                    let polygonContextMaterial = GeoJsonObj[geometry.type].context;
+                    if (polygonContextMaterial != null) {
+                        let shapeGeometry = new THREE.ShapeGeometry(shape);
+                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial);
+                        context.rotation.x = Math.PI / 2
+                        contextGroup.add(context);
+                    }
+                }
+                three.scene.add(lineGroup)
+                three.scene.add(contextGroup)
+            }
+            if (geometry.type == 'Polygon') {
+                let lineGroup = new THREE.Group();
+                let contextGroup = new THREE.Group()
+                let coordinates = geometry.coordinates;
+                for (let k = 0; k < coordinates.length; k++) {
+                    //经纬度数据
+                    let vertices = [];
+                    //样条曲线对象
+                    let shape = new THREE.Shape();
+                    //阿里的数据都是单层的 所以直接拿第一个数组
+                    let Polygon = coordinates[k];
+                    for (let m = 0; m < Polygon.length; m++) {
+                        let lon = Polygon[m][0];
+                        let lat = Polygon[m][1];
+                        let Mercator = lonlatToMercator(lon, lat);
+                        vertices.push(Mercator.x, Mercator.y + 0.01, Mercator.z);
+                        //样条曲线
+                        if (m == 0) {
+                            shape.moveTo(Mercator.x, Mercator.z)
+                        } else {
+                            shape.lineTo(Mercator.x, Mercator.z)
+                        }
+                    }
+                    //添加boder
+                    let polygonBorderMaterial = GeoJsonObj[geometry.type].border;
+                    if (polygonBorderMaterial != null) {
+                        let lineGeometry = new THREE.LineGeometry();
+                        lineGeometry.setPositions(vertices);
+                        let line = new THREE.Line2(lineGeometry, polygonBorderMaterial);
+                        line.computeLineDistances();
+                        lineGroup.add(line);
+                    }
+
+                    //添加context
+                    let polygonContextMaterial = GeoJsonObj[geometry.type].context;
+                    if (polygonContextMaterial != null) {
+                        let shapeGeometry = new THREE.ShapeGeometry(shape);
+                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial);
+                        context.rotation.x = Math.PI / 2
+                        contextGroup.add(context);
+                    }
+                }
+                three.scene.add(lineGroup)
+                three.scene.add(contextGroup)
+            }
+
+        }
+
+    }
+
+
+    //经纬度转墨卡托
+    function lonlatToMercator(lon, lat, height) {
+        var z = height ? height : 0;
+        var x = (lon / 180.0) * 20037508.3427892;
+        var y = (Math.PI / 180.0) * lat;
+        var tmp = Math.PI / 4.0 + y / 2.0;
+        y = 20037508.3427892 * Math.log(Math.tan(tmp)) / Math.PI;
+        return { x: x / 100000, y: z, z: -y / 100000 };
+    }
+
+
+</script>
+
+</html>
