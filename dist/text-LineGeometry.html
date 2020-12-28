@@ -53,11 +53,11 @@
 //         //    new THREE.Vector2( 35, 1 )
 //     	];
     var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x40E0D0),wireframe:false,side:THREE.FrontSide});
-    var g =new LineBufferGeometry(points,1,three);
+    var g =new LLineBufferGeometry(points,1,three);
     var cube = new THREE.Mesh(g, material);
 //10000 4帧
     // for(let i = 0;i<2000;i++){
-    //     three.scene.add(new THREE.Mesh(new LineBufferGeometry(points,1,three), material));
+    //     three.scene.add(new THREE.Mesh(new LLineBufferGeometry(points,1,three), material));
     // }
     three.addRenderEvent('a', function () {
      cube.rotation.y += 0.01;

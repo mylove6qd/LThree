@@ -26,25 +26,19 @@
 </body>
 <script src="./LThree.js"></script>
 <script src="./data/data.js"></script>
-<script src="./plus/LineMaterial.js"></script>
-<script src="./plus/LineSegmentsGeometry.js"></script>
-<script src="./plus/LineSegments2.js"></script>
-<script src="./plus/LineGeometry.js"></script>
-<script src="./plus/Line2.js"></script>
-<script src="./plus/CSS2DRenderer.js"></script>
-<script src="./plus/OrbitControls.js"></script>
 <script>
     var three = new LThree({ id: 'webgl' });
+    three.initStats();
 
     //css2 渲染器
-    let labelRenderer = new THREE.CSS2DRenderer();
+    let labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(window.innerWidth, window.innerHeight);
     labelRenderer.domElement.style.position = 'absolute';
     labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
     document.body.appendChild(labelRenderer.domElement);
 
     //改变控制器 渲染
-    three.controls = new THREE.OrbitControls(three.camera, labelRenderer.domElement);
     three.addRenderEvent('css2render', () => {
         labelRenderer.render(three.scene, three.camera);
     }, true);
@@ -63,13 +57,15 @@
 
     function loadGeoJson(data) {
 
-        let polygonBorderMaterial = new THREE.LineMaterial({
+        let polygonBorderMaterial = new LineMaterial({
             color: 0x00FFFF,
             linewidth: 3,
             dashed: false
         })
         polygonBorderMaterial.resolution.set(window.innerWidth, window.innerHeight)
 
+        //选中颜色
+        let isChooecolor = new THREE.Color(0x1E90FF);
         let polygonContextMaterial = new THREE.MeshBasicMaterial({
             color: 0x2F4F4F,
             side: THREE.BackSide
@@ -102,21 +98,23 @@
 
         let features = data.features;
 
-        let lineGroup = new THREE.Group();lineGroup.name = 'chinaLine';
-        let contextGroup = new THREE.Group();contextGroup.name = 'chinaCentext';
-        let lableGroup = new THREE.Group();lableGroup.name = 'provinceName';
+        let chinaGroup = new THREE.Group(); chinaGroup.name = 'chinaGroup';
         for (let i = 0; i < features.length; i++) {
-            //添加标题
+
+
             let properties = features[i].properties;
+            let provinceGroup = new THREE.Group(); provinceGroup.name = properties.name;
+
+            //添加标题
             const div = document.createElement('div');
             div.textContent = properties.name;
             div.style.color = '#ffffff';
-            let labelObj = new THREE.CSS2DObject(div);
+            let labelObj = new CSS2DObject(div);
             if (properties.hasOwnProperty('center') && (properties.name != '香港特别行政区') && (properties.name != '澳门特别行政区')) {
                 let center = properties.centroid || properties.center;
                 let lablePosition = lonlatToMercator(center[0], center[1]);
                 labelObj.position.set(lablePosition.x, lablePosition.y + 0.02, lablePosition.z);
-                lableGroup.add(labelObj);
+                provinceGroup.add(labelObj);
             }
 
             let geometry = features[i].geometry;
@@ -144,20 +142,26 @@
                     //添加boder
                     let polygonBorderMaterial = GeoJsonObj[geometry.type].border;
                     if (polygonBorderMaterial != null) {
-                        let lineGeometry = new THREE.LineGeometry();
+                        let lineGeometry = new LineGeometry();
                         lineGeometry.setPositions(vertices);
-                        let line = new THREE.Line2(lineGeometry, polygonBorderMaterial);
+                        let line = new Line2(lineGeometry, polygonBorderMaterial);
                         line.computeLineDistances();
-                        lineGroup.add(line);
+                        provinceGroup.add(line);
                     }
 
                     //添加context
                     let polygonContextMaterial = GeoJsonObj[geometry.type].context;
                     if (polygonContextMaterial != null) {
                         let shapeGeometry = new THREE.ShapeGeometry(shape);
-                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial);
+                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial.clone());
                         context.rotation.x = Math.PI / 2
-                        contextGroup.add(context);
+                        context.on('mouseenter', function (obj) {
+                            obj.material.color = isChooecolor.clone();
+                        })
+                        context.on('mouseleave', function (obj) {
+                            obj.material.color = polygonContextMaterial.color.clone();
+                        })
+                        provinceGroup.add(context);
                     }
                 }
 
@@ -186,26 +190,30 @@
                     //添加boder
                     let polygonBorderMaterial = GeoJsonObj[geometry.type].border;
                     if (polygonBorderMaterial != null) {
-                        let lineGeometry = new THREE.LineGeometry();
+                        let lineGeometry = new LineGeometry();
                         lineGeometry.setPositions(vertices);
-                        let line = new THREE.Line2(lineGeometry, polygonBorderMaterial);
+                        let line = new Line2(lineGeometry, polygonBorderMaterial);
                         line.computeLineDistances();
-                        lineGroup.add(line);
+                        provinceGroup.add(line);
                     }
 
                     //添加context
                     let polygonContextMaterial = GeoJsonObj[geometry.type].context;
                     if (polygonContextMaterial != null) {
                         let shapeGeometry = new THREE.ShapeGeometry(shape);
-                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial);
+                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial.clone());
                         context.rotation.x = Math.PI / 2
-                        contextGroup.add(context);
+                        context.on('mouseenter', function (obj) {
+                            obj.material.color = isChooecolor.clone();
+                        })
+                        context.on('mouseleave', function (obj) {
+                            obj.material.color = polygonContextMaterial.color.clone()
+                        })
+                        provinceGroup.add(context);
                     }
                 }
             }
-            three.scene.add(lineGroup)
-            three.scene.add(contextGroup);
-            three.scene.add(lableGroup);
+            three.scene.add(provinceGroup)
 
         }
 

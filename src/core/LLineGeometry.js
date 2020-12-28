@@ -10,9 +10,9 @@ import { GPU } from 'gpu.js';
 
 
 
-//LineGeometry
+//LLineGeometry
 
-class LineGeometry extends Geometry {
+class LLLineGeometry extends Geometry {
 
     //basePoints 基础点数组 [Vector2] / [Vector3]  width 条带宽度   相机点 cameraPosition
     constructor(basePoints, width, three) {
@@ -23,7 +23,7 @@ class LineGeometry extends Geometry {
 
         super();
 
-        this.type = 'LineGeometry';
+        this.type = 'LLineGeometry';
 
         this.parameters = {
             basePoints: basePoints,
@@ -32,7 +32,7 @@ class LineGeometry extends Geometry {
         }
 
 
-        this.fromBufferGeometry(new LineBufferGeometry(basePoints, width, three));
+        this.fromBufferGeometry(new LLineBufferGeometry(basePoints, width, three));
 
         this.mergeVertices();
 
@@ -40,9 +40,9 @@ class LineGeometry extends Geometry {
 
 }
 
-//LineBufferGeometry
+//LLineBufferGeometry
 
-class LineBufferGeometry extends BufferGeometry {
+class LLineBufferGeometry extends BufferGeometry {
 
     constructor(basePoints, width, three) {
 
@@ -53,7 +53,7 @@ class LineBufferGeometry extends BufferGeometry {
 
         super();
 
-        this.type = 'LineBufferGeometry';
+        this.type = 'LLineBufferGeometry';
 
         this.parameters = {
             basePoints: basePoints,
@@ -288,7 +288,7 @@ function bindEvent(obj, three) {
     }, true);
 }
 
-export { LineBufferGeometry };
+export { LLineBufferGeometry };
 
 let gpu = new GPU();
 let calPoint = gpu.createKernel(function (pointPosition, cameraPosition, width, size) {

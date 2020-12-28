@@ -4,10 +4,17 @@
  */
 
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import  Stats  from 'three/examples/jsm/libs/stats.module.js';
-import  LUtils  from './LUtils';
-import { LineGeometry,LineBufferGeometry } from './core/LineGeometry.js';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import Stats from 'three/examples/jsm/libs/stats.module.js';
+import {LineMaterial} from 'three/examples/jsm/Lines/LineMaterial.js';
+import {LineSegmentsGeometry} from 'three/examples/jsm/Lines/LineSegmentsGeometry.js';
+import {LineSegments2} from 'three/examples/jsm/Lines/LineSegments2.js';
+import {LineGeometry} from 'three/examples/jsm/Lines/LineGeometry.js';
+import {Line2} from 'three/examples/jsm/Lines/Line2.js';
+import {CSS2DRenderer,CSS2DObject} from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+
+import LUtils from './LUtils';
+import { LLineGeometry, LLineBufferGeometry } from './core/LLineGeometry.js';
 THREE.Object3D.prototype.on = function (type, fn) {
     this[type] = fn;
 }
@@ -29,6 +36,8 @@ class LThree {
         this._isPropagation = true;
         //按下的对象
         this._mousedownObj;
+        //鼠标指向的对象
+        this._mouseObj = null;
         //是否按下
         this._isDown = false;
         //是否脱移
@@ -39,7 +48,7 @@ class LThree {
                 if (obj.hasOwnProperty(EventName)) {
                     //判断是否冒泡
                     if (this._isPropagation) {
-                        (obj[EventName])(event);
+                        (obj[EventName])(obj);
                     } else {
                         //不冒泡就恢复冒泡
                         this._isPropagation = true;
@@ -95,9 +104,9 @@ class LThree {
             targer = targer == undefined ? true : targer;
             this._renderEventMap.set(eventName, [fn, targer]);
         }
-        this.addRenderChangeEvent = function(eventName, fn, targer){
+        this.addRenderChangeEvent = function (eventName, fn, targer) {
             targer = targer == undefined ? true : targer;
-            if(!this._renderEventMap.has(eventName)){
+            if (!this._renderEventMap.has(eventName)) {
                 this._renderChangeEventMap.set(eventName, [fn, targer]);
             }
         }
@@ -118,7 +127,7 @@ class LThree {
         }
         //渲染方法
         this.render = function (time) {
-            if( this._isControlsChange ){
+            if (this._isControlsChange) {
                 for (let [key, value] of this._renderChangeEventMap) {
                     if (value[1]) {
                         value[0](time);
@@ -145,7 +154,7 @@ class LThree {
         };
 
         //直接看向某处
-        this.lookAt = function(vec3){
+        this.lookAt = function (vec3) {
             this.camera.lookAt(vec3);
             this.controls.target.x = vec3.x;
             this.controls.target.y = vec3.y;
@@ -173,7 +182,7 @@ class LThree {
         this.controls.target.y = this.scene.position.y;
         this.controls.target.z = this.scene.position.z;
         //视角变化的才出发
-        this.controls.addEventListener('change', ()=>{
+        this.controls.addEventListener('change', () => {
             this._isControlsChange = true;
         });
 
@@ -207,6 +216,18 @@ class LThree {
             //mouseenter  mouseleave 
             //mouseover  mouseout 
             //与 mouseout 事件不同，只有在鼠标指针离开被选元素时，才会触发 mouseleave 事件。如果鼠标指针离开任何子元素，同样会触发 mouseout 事件
+            let obj = this._getRaycasterObj.bind(this)();
+            if (this._mouseObj != null) {
+                //判断是不是同一个对象
+                if (this._mouseObj != obj) {
+                    this._recursionEvent(obj, 'mouseenter', event);
+                    this._recursionEvent(this._mouseObj, 'mouseleave', event);
+                }
+            } else {
+                //新进入
+                this._recursionEvent(obj, 'mouseenter', event);
+            }
+            this._mouseObj = obj;
         });
         //添加window 的resize事件监听 (浏览器窗口变动触发的方法)
         window.addEventListener('resize', (event) => {
@@ -219,12 +240,21 @@ class LThree {
         });
     }
 }
-export {LThree,
-        THREE,
-        LUtils,
-        LineGeometry,
-        LineBufferGeometry
-    };
+export {
+    LThree,
+    THREE,
+    LUtils,
+    LLineGeometry,
+    LLineBufferGeometry,
+    OrbitControls,
+    LineMaterial,
+    LineSegmentsGeometry,
+    LineSegments2,
+    LineGeometry,
+    Line2,
+    CSS2DRenderer,
+    CSS2DObject,
+};
 
 //------------------------------------------------------------------------------------------utils function 
 //过滤射线的所有透明对象 所见即所得
