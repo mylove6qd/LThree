@@ -31,48 +31,32 @@
 <script src="./plus/LineSegments2.js"></script>
 <script src="./plus/LineGeometry.js"></script>
 <script src="./plus/Line2.js"></script>
+<script src="./plus/CSS2DRenderer.js"></script>
+<script src="./plus/OrbitControls.js"></script>
 <script>
     var three = new LThree({ id: 'webgl' });
+
+    //css2 渲染器
+    let labelRenderer = new THREE.CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    document.body.appendChild(labelRenderer.domElement);
+
+    //改变控制器 渲染
+    three.controls = new THREE.OrbitControls(three.camera, labelRenderer.domElement);
+    three.addRenderEvent('css2render', () => {
+        labelRenderer.render(three.scene, three.camera);
+    }, true);
+
+    //相机位置
     three.camera.position.set(120.87436306922761, 97.08646666545671, -36.33511252219169);
     three.lookAt(new THREE.Vector3(120.87436306922761, 0, -36.33511252219169));
 
-
+    //背景颜色
     three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
 
-    //线
-    var helper = new THREE.GridHelper(40000, 10000, 0xffffff, 0xffffff);
-    // three.scene.add(helper);
-
-
-
-    // const  color1 = new THREE.Color('#79d4b9');
-    //         const  color2 = new THREE.Color('#07D46E');
-    //         const color = [
-    //             color1.r, color1.g,color1.b,
-    //             color2.r, color2.g,color2.b
-    //         ]
-    //         const geometry = new THREE.LineGeometry()
-    //             geometry.setPositions( [
-    //               10,10,10,
-    //                 90,90,90
-    //             ])
-    //            // geometry.setColors( color )
-    //             const  matLine = new THREE.LineMaterial( {
-    //                 color: 0x79d4b9,
-    // 				linewidth: 5, // in pixels
-    // 				//vertexColors: true,
-    // 				dashed: false
-    //             });
-    //             matLine.resolution.set( window.innerWidth, window.innerHeight )
-
-
-    //             const  line = new THREE.Line2( geometry, matLine )
-
-    //             line.computeLineDistances();
-
-    //             three.scene.add(line);
-
-
+    //加载数据
     loadGeoJson(chinaAll);
 
     three.update();
@@ -118,10 +102,23 @@
 
         let features = data.features;
 
-        let lineGroup = new THREE.Group();
-        let contextGroup = new THREE.Group()
-
+        let lineGroup = new THREE.Group();lineGroup.name = 'chinaLine';
+        let contextGroup = new THREE.Group();contextGroup.name = 'chinaCentext';
+        let lableGroup = new THREE.Group();lableGroup.name = 'provinceName';
         for (let i = 0; i < features.length; i++) {
+            //添加标题
+            let properties = features[i].properties;
+            const div = document.createElement('div');
+            div.textContent = properties.name;
+            div.style.color = '#ffffff';
+            let labelObj = new THREE.CSS2DObject(div);
+            if (properties.hasOwnProperty('center') && (properties.name != '香港特别行政区') && (properties.name != '澳门特别行政区')) {
+                let center = properties.centroid || properties.center;
+                let lablePosition = lonlatToMercator(center[0], center[1]);
+                labelObj.position.set(lablePosition.x, lablePosition.y + 0.02, lablePosition.z);
+                lableGroup.add(labelObj);
+            }
+
             let geometry = features[i].geometry;
             if (geometry.type == 'MultiPolygon') {
                 let coordinates = geometry.coordinates;
@@ -207,7 +204,8 @@
                 }
             }
             three.scene.add(lineGroup)
-            three.scene.add(contextGroup)
+            three.scene.add(contextGroup);
+            three.scene.add(lableGroup);
 
         }
 
