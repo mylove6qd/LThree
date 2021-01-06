@@ -29,6 +29,15 @@
 <script>
     var three = new LThree({ id: 'webgl' });
 
+    // three.controls.enableRotate = false;
+    three.controls.maxAzimuthAngle = Math.PI / 4
+    three.controls.minAzimuthAngle = -Math.PI / 4
+
+    three.controls.maxPolarAngle = Math.PI / 3
+
+    three.controls.maxDistance = 200
+    three.controls.minDistance = 10
+
     three.initStats();
 
     //css2 渲染器
@@ -107,7 +116,6 @@
                 three.animateCamera({
                     points: new THREE.Vector3(115, 100, -40),
                     target: new THREE.Vector3(115, 0, -40),
-                    time: 1,
                     fn: function () {
                         three.animateCamera({
                             points: curve,
@@ -177,9 +185,10 @@
             div.textContent = properties.name;
             div.style.color = '#ffffff';
             let labelObj = new CSS2DObject(div);
+            let lablePosition = { x: 0, y: 0, z: 0 };
             if (properties.hasOwnProperty('center') && (properties.name != '香港特别行政区') && (properties.name != '澳门特别行政区')) {
                 let center = properties.centroid || properties.center;
-                let lablePosition = lonlatToMercator(center[0], center[1]);
+                lablePosition = lonlatToMercator(center[0], center[1]);
                 labelObj.position.set(lablePosition.x, lablePosition.y + 0.02, lablePosition.z);
                 provinceGroup.add(labelObj);
             }
@@ -228,6 +237,18 @@
                         context.on('mouseleave', function (obj) {
                             obj.material.color = polygonContextMaterial.color.clone();
                         })
+                        context.on('click', function (obj) {
+                            let point = obj.centerPoint.clone()
+                            point.y = 15;
+                            let target = obj.centerPoint.clone()
+                            target.z += -1;
+                            three.animateCamera({
+                                points: point,
+                                target: target,
+                                time: 1000
+                            })
+                        })
+                        context.centerPoint = new THREE.Vector3(lablePosition.x, lablePosition.y, lablePosition.z);
                         provinceGroup.add(context);
                     }
                 }
@@ -276,6 +297,18 @@
                         context.on('mouseleave', function (obj) {
                             obj.material.color = polygonContextMaterial.color.clone()
                         })
+                        context.on('click', function (obj) {
+                            let point = obj.centerPoint.clone()
+                            point.y = 15;
+                            let target = obj.centerPoint.clone()
+                            target.z += -1;
+                            three.animateCamera({
+                                points: point,
+                                target: target,
+                                time: 1000
+                            })
+                        })
+                        context.centerPoint = new THREE.Vector3(lablePosition.x, lablePosition.y, lablePosition.z);
                         provinceGroup.add(context);
                     }
                 }
