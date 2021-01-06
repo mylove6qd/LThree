@@ -4,17 +4,22 @@
  */
 
 import * as THREE from 'three';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import { TWEEN } from 'three/examples/jsm/libs/tween.module.min.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import {LineMaterial} from 'three/examples/jsm/Lines/LineMaterial.js';
-import {LineSegmentsGeometry} from 'three/examples/jsm/Lines/LineSegmentsGeometry.js';
-import {LineSegments2} from 'three/examples/jsm/Lines/LineSegments2.js';
-import {LineGeometry} from 'three/examples/jsm/Lines/LineGeometry.js';
-import {Line2} from 'three/examples/jsm/Lines/Line2.js';
-import {CSS2DRenderer,CSS2DObject} from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { GUI } from 'three/examples/jsm/libs/dat.gui.module';
+import { LineMaterial } from 'three/examples/jsm/Lines/LineMaterial.js';
+import { LineSegmentsGeometry } from 'three/examples/jsm/Lines/LineSegmentsGeometry.js';
+import { LineSegments2 } from 'three/examples/jsm/Lines/LineSegments2.js';
+import { LineGeometry } from 'three/examples/jsm/Lines/LineGeometry.js';
+import { Line2 } from 'three/examples/jsm/Lines/Line2.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 import LUtils from './LUtils';
 import { LLineGeometry, LLineBufferGeometry } from './core/LLineGeometry.js';
+
+
+import { Vector3, Vector4 } from 'three';
 THREE.Object3D.prototype.on = function (type, fn) {
     this[type] = fn;
 }
@@ -151,6 +156,11 @@ class LThree {
                 this.update(time);
             });
             this.render(time);
+            //tween动画
+            TWEEN.update(time);
+            //控制器
+            //console.log(this.controls.update());
+
         };
 
         //直接看向某处
@@ -159,6 +169,74 @@ class LThree {
             this.controls.target.x = vec3.x;
             this.controls.target.y = vec3.y;
             this.controls.target.z = vec3.z;
+        }
+        //相机移动
+        /*opt {
+            easing:TWEEN.Easing.Elastic.InOut   //tween缓和的动画类型
+            points:[Points,Points,Points.....]   //样条曲线Curve的getPoints  因该是Vector3对象   用来表示补间控制点
+            time:1000      //时间  毫秒
+            target:Vector3   //相机移动时候的视角中心点 
+            fn:func   //回调
+        }
+        */
+        this.animateCamera = function (opt) {
+            let option = Object.assign({
+                easing: TWEEN.Easing.Quadratic.InOut,
+                points: this.camera.position,
+                time: 1,
+                target: new Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z),
+                fn: function () { }
+            }, opt);
+
+            if (!(option.points instanceof Array)) {
+                option.points = [option.points];
+            }
+
+            //变化的初始值
+            let startData = {
+                cx: this.camera.position.x,
+                cy: this.camera.position.y,
+                cz: this.camera.position.z,
+                tx: this.controls.target.x,
+                ty: this.controls.target.y,
+                tz: this.controls.target.z
+            }
+            let tween = new TWEEN.Tween(startData);
+            //关闭控制器
+            this.controls.enabled = false;
+            //相机位置补间数组 
+            let cxs = [];
+            let cys = [];
+            let czs = [];
+            for (let i = 0; i < option.points.length; i++) {
+                cxs.push(option.points[i].x);
+                cys.push(option.points[i].y);
+                czs.push(option.points[i].z);
+            }
+            tween.to({
+                cx: cxs,
+                cy: cys,
+                cz: czs,
+                tx: option.target.x,
+                ty: option.target.y,
+                tz: option.target.z
+            }, option.time);
+            tween.onUpdate((data) => {
+                this.camera.position.x = data.cx;
+                this.camera.position.y = data.cy;
+                this.camera.position.z = data.cz;
+                this.controls.target.x = data.tx;
+                this.controls.target.y = data.ty;
+                this.controls.target.z = data.tz;
+                this.controls.update();
+            })
+            tween.onComplete(() => {
+                ///开启控制器
+                this.controls.enabled = true;
+                option.fn();
+            });
+            tween.easing(option.easing);
+            tween.start();
         }
 
         let option = Object.assign({
@@ -170,9 +248,10 @@ class LThree {
 
         //基本配置
         let controls = opt.controls || new OrbitControls(option.camera, option.renderer.domElement);
+
         this.scene = option.scene;
         this.camera = option.camera;
-        this.camera.position.set(1, 1, 0);
+        this.camera.position.set(0, 1, 0);
         this.renderer = option.renderer;
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -238,6 +317,7 @@ class LThree {
             // 重新设置渲染器渲染范围
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
     }
 }
 export {
@@ -254,6 +334,8 @@ export {
     Line2,
     CSS2DRenderer,
     CSS2DObject,
+    TWEEN,
+    GUI
 };
 
 //------------------------------------------------------------------------------------------utils function 
