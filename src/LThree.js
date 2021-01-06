@@ -181,7 +181,7 @@ class LThree {
         */
         this.animateCamera = function (opt) {
             let option = Object.assign({
-                easing: TWEEN.Easing.Quadratic.InOut,
+                easing: TWEEN.Easing.Linear.None,
                 points: this.camera.position,
                 time: 1,
                 target: new Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z),

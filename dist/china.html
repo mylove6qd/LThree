@@ -50,20 +50,22 @@
     }, true);
 
     three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+
     var helper = new THREE.GridHelper(40000, 100, 0xffffff, 0xffffff);
     three.scene.add(helper);
 
+    var axesHelper = new THREE.AxesHelper(5);
+    three.scene.add(axesHelper);
+
     // //相机位置
     three.animateCamera({
-        points: new THREE.Vector3(114.79974123921474, 112.0542854496318, -40.52250750970406),
-        target: new THREE.Vector3(114.79973993537538, 0, -40.52261956138473),
+        points: new THREE.Vector3(115, 100, -40),
+        target: new THREE.Vector3(115, 0, -40),
         time: 1000
     })
-    //    three.camera.position.set(120.87436306922761, 97.08646666545671, -36.33511252219169);
-    //    three.lookAt(new THREE.Vector3(120.87436306922761, 0, -20.33511252219169));
 
     //背景颜色
-    three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
+    //  three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
 
     //加载数据
     loadGeoJson(chinaAll);
@@ -72,26 +74,48 @@
 
     initGui();
 
+    //相机轨迹线
+    var curve1 = [
+        new THREE.Vector3(115, 100, -40),
+        new THREE.Vector3(115, 62, 38),
+        new THREE.Vector3(210, 62, -27),
+        new THREE.Vector3(115, 62, -92),
+        new THREE.Vector3(20, 62, -27),
+        new THREE.Vector3(115, 62, 38),
+        new THREE.Vector3(115, 100, -40),
+    ];
+
+    var geometry = new THREE.BufferGeometry().setFromPoints(curve1);
+    var material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+    var line = new THREE.Line(geometry, material);
+    three.scene.add(line);
+
     //----------------------------------------------------------------------------------------------------------------------
 
     function initGui() {
         let param = {
             animateCamera: function () {
                 var curve = [
-
-                    new THREE.Vector3(117.33330323176656, 26.475280037984987, 68.32958984004887),
-                    new THREE.Vector3(172.9087154806982, 16.011341134597163, -34.75671398243446),
-                    new THREE.Vector3(113.45105820859051, 44.494803211092496, -156.42804491614794),
-                    new THREE.Vector3(68.5883689527759, 16.86773022641919, -44.02430786630384),
-                    new THREE.Vector3(117.33330323176656, 26.475280037984987, 68.32958984004887),
-                    new THREE.Vector3(114.79974123921474, 112.0542854496318, -40.52250750970406),
+                    new THREE.Vector3(115, 62, 38),
+                    new THREE.Vector3(210, 62, -27),
+                    new THREE.Vector3(115, 62, -92),
+                    new THREE.Vector3(20, 62, -27),
+                    new THREE.Vector3(115, 62, 38),
+                    new THREE.Vector3(115, 100, -40),
                 ];
 
-                // var points = curve.getPoints( 50 );
                 three.animateCamera({
-                    points: curve,
-                    time: 10000,
+                    points: new THREE.Vector3(115, 100, -40),
+                    target: new THREE.Vector3(115, 0, -40),
+                    time: 1,
+                    fn: function () {
+                        three.animateCamera({
+                            points: curve,
+                            time: 10000,
+                        })
+                    }
                 })
+
             }
         }
         let gui = new GUI();
