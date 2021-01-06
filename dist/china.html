@@ -28,6 +28,7 @@
 <script src="./data/data.js"></script>
 <script>
     var three = new LThree({ id: 'webgl' });
+
     three.initStats();
 
     //css2 渲染器
@@ -37,15 +38,29 @@
     labelRenderer.domElement.style.top = '0px';
     labelRenderer.domElement.style.pointerEvents = 'none';
     document.body.appendChild(labelRenderer.domElement);
+    //添加window 的resize事件监听 (浏览器窗口变动触发的方法)
+    window.addEventListener('resize', (event) => {
+        // 重新设置渲染器渲染范围
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
     //改变控制器 渲染
     three.addRenderEvent('css2render', () => {
         labelRenderer.render(three.scene, three.camera);
     }, true);
 
-    //相机位置
-    three.camera.position.set(120.87436306922761, 97.08646666545671, -36.33511252219169);
-    three.lookAt(new THREE.Vector3(120.87436306922761, 0, -36.33511252219169));
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+    var helper = new THREE.GridHelper(40000, 100, 0xffffff, 0xffffff);
+    three.scene.add(helper);
+
+    // //相机位置
+    three.animateCamera({
+        points: new THREE.Vector3(114.79974123921474, 112.0542854496318, -40.52250750970406),
+        target: new THREE.Vector3(114.79973993537538, 0, -40.52261956138473),
+        time: 1000
+    })
+    //    three.camera.position.set(120.87436306922761, 97.08646666545671, -36.33511252219169);
+    //    three.lookAt(new THREE.Vector3(120.87436306922761, 0, -20.33511252219169));
 
     //背景颜色
     three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
@@ -54,6 +69,34 @@
     loadGeoJson(chinaAll);
 
     three.update();
+
+    initGui();
+
+    //----------------------------------------------------------------------------------------------------------------------
+
+    function initGui() {
+        let param = {
+            animateCamera: function () {
+                var curve = [
+
+                    new THREE.Vector3(117.33330323176656, 26.475280037984987, 68.32958984004887),
+                    new THREE.Vector3(172.9087154806982, 16.011341134597163, -34.75671398243446),
+                    new THREE.Vector3(113.45105820859051, 44.494803211092496, -156.42804491614794),
+                    new THREE.Vector3(68.5883689527759, 16.86773022641919, -44.02430786630384),
+                    new THREE.Vector3(117.33330323176656, 26.475280037984987, 68.32958984004887),
+                    new THREE.Vector3(114.79974123921474, 112.0542854496318, -40.52250750970406),
+                ];
+
+                // var points = curve.getPoints( 50 );
+                three.animateCamera({
+                    points: curve,
+                    time: 10000,
+                })
+            }
+        }
+        let gui = new GUI();
+        gui.add(param, 'animateCamera')
+    }
 
     function loadGeoJson(data) {
 
