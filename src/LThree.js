@@ -53,7 +53,7 @@ class LThree {
                 if (obj.hasOwnProperty(EventName)) {
                     //判断是否冒泡
                     if (this._isPropagation) {
-                        (obj[EventName])(obj);
+                        (obj[EventName])(obj, event);
                     } else {
                         //不冒泡就恢复冒泡
                         this._isPropagation = true;
@@ -177,6 +177,7 @@ class LThree {
             time:1000      //时间  毫秒
             target:Vector3   //相机移动时候的视角中心点 
             fn:func   //回调
+            limit:false  //是否应用限制
         }
         */
         this.animateCamera = function (opt) {
@@ -185,7 +186,8 @@ class LThree {
                 points: this.camera.position,
                 time: 1,
                 target: new Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z),
-                fn: function () { }
+                fn: function () { },
+                limit: false
             }, opt);
 
             if (!(option.points instanceof Array)) {
@@ -202,8 +204,7 @@ class LThree {
                 tz: this.controls.target.z
             }
             let tween = new TWEEN.Tween(startData);
-            //关闭控制器
-            this.controls.enabled = false;
+
             //相机位置补间数组 
             let cxs = [];
             let cys = [];
@@ -221,7 +222,29 @@ class LThree {
                 ty: option.target.y,
                 tz: option.target.z
             }, option.time);
+            //取消控制器限制
+            let oldmaxAzimuthAngle = this.controls.maxAzimuthAngle
+            let oldminAzimuthAngle = this.controls.minAzimuthAngle
+            let oldmaxPolarAngle = this.controls.maxPolarAngle
+            let oldminPolarAngle = this.controls.minPolarAngle
+            let oldmaxDistance = this.controls.maxDistance
+            let oldminDistance = this.controls.minDistance
+            let oldmaxZoom = this.controls.maxZoom
+            let oldminZoom = this.controls.minZoom
+            if (!option.limit) {
+                this.controls.maxAzimuthAngle = Infinity
+                this.controls.minAzimuthAngle = Infinity
+                this.controls.maxPolarAngle = Math.PI
+                this.controls.minPolarAngle = 0
+                this.controls.maxDistance = Infinity
+                this.controls.minDistance = 0
+                this.controls.maxZoom = Infinity
+                this.controls.minZoom = 0
+            }
+
             tween.onUpdate((data) => {
+                //关闭控制器
+                this.controls.enabled = false;
                 this.camera.position.x = data.cx;
                 this.camera.position.y = data.cy;
                 this.camera.position.z = data.cz;
@@ -233,6 +256,16 @@ class LThree {
             tween.onComplete(() => {
                 ///开启控制器
                 this.controls.enabled = true;
+                //恢复限制控制
+                this.controls.maxAzimuthAngle = oldmaxAzimuthAngle
+                this.controls.minAzimuthAngle = oldminAzimuthAngle
+                this.controls.maxPolarAngle = oldmaxPolarAngle
+                this.controls.minPolarAngle = oldminPolarAngle
+                this.controls.maxDistance = oldmaxDistance
+                this.controls.minDistance = oldminDistance
+                this.controls.maxZoom = oldmaxZoom
+                this.controls.minZoom = oldminZoom
+
                 option.fn();
             });
             tween.easing(option.easing);
