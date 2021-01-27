@@ -29,14 +29,15 @@
 <script>
     var three = new LThree({ id: 'webgl' });
 
+    //控制器控制
     // three.controls.enableRotate = false;
-    three.controls.maxAzimuthAngle = Math.PI / 4
-    three.controls.minAzimuthAngle = -Math.PI / 4
+    // three.controls.maxAzimuthAngle = Math.PI / 4
+    // three.controls.minAzimuthAngle = -Math.PI / 4
 
-    three.controls.maxPolarAngle = Math.PI / 3
+    // three.controls.maxPolarAngle = Math.PI / 3
 
-    three.controls.maxDistance = 200
-    three.controls.minDistance = 10
+    // three.controls.maxDistance = 200
+    // three.controls.minDistance = 10
 
     three.initStats();
 
@@ -58,11 +59,9 @@
         labelRenderer.render(three.scene, three.camera);
     }, true);
 
-    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
-
+    //网格辅助
     var helper = new THREE.GridHelper(40000, 100, 0xffffff, 0xffffff);
     three.scene.add(helper);
-
     var axesHelper = new THREE.AxesHelper(5);
     three.scene.add(axesHelper);
 
@@ -74,10 +73,58 @@
     })
 
     //背景颜色
-    //  three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+    //背景颜色
+    three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
 
+    //闪烁参数
+    let period = 1000;
+
+    //拉高材质属性
+    var extrudeSettings = {
+        bevelEnabled: false,//无倒角
+        depth: 1
+    };
+    //拉高材质
+    let lineUniforms = {
+        time: { type: "f", value: "0.0" },
+        color: {
+            type: "c",
+            value: new THREE.Color(0x7CFC00)
+        },
+        depth: { type: "f", value: extrudeSettings.depth }
+    }
+    let polygonContextMaterial2 = new THREE.ShaderMaterial({
+        // wireframe: true,
+        side: THREE.DoubleSide,
+        transparent: true,
+        uniforms: lineUniforms,
+        vertexShader: `
+        varying float z;
+        uniform float depth;
+            void main(){
+                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
+                z = clamp(0.,1.,position.z/depth);
+            }`,
+        fragmentShader: `
+            uniform vec3 color;
+            uniform float time;
+            varying float z;
+            void main(){
+                gl_FragColor = vec4(color,(1.-z)*time);
+            }`
+    });
+
+    let chinaGroup
+    let allLineGroup
     //加载数据
     loadGeoJson(chinaAll);
+
+    //动态
+    three.addRenderEvent('a', () => {
+        let value = Math.abs(Math.sin(Date.now() / period));
+        polygonContextMaterial2.uniforms.time.value = value;
+    }, true)
 
     three.update();
 
@@ -97,6 +144,7 @@
     var geometry = new THREE.BufferGeometry().setFromPoints(curve1);
     var material = new THREE.LineBasicMaterial({ color: 0x0000ff });
     var line = new THREE.Line(geometry, material);
+    line.name = '轨迹线';
     three.scene.add(line);
 
     //----------------------------------------------------------------------------------------------------------------------
@@ -123,11 +171,48 @@
                         })
                     }
                 })
+            },
+            pullUp: function () {
+                three.animateCamera({
+                    points: new THREE.Vector3(124.13342025599815, 37.999343544769474, 52.04689307409521),
+                    fn: function () {
+                        let time = 1000;//时间
+                        let depth = 0.1;//起始高度
+                        let tDepth = 1;//目标高度
+                        //转到当前高度
+                        chinaGroup.applyMatrix(new THREE.Matrix4().makeScale(1, 1 / (extrudeSettings.depth) * depth, 1))
+                        three.animateCamera({
+                            points: new THREE.Vector3(146.9572189573925, 4.465699747450355, -27.466363989015214),
+                            time: 3000,
+                            fn2000: function () {
+                                let i = { x: depth };
+                                let tween = new TWEEN.Tween(i);
+                                tween.to({ x: tDepth }, time);
+                                let depthSnap = depth;
+                                tween.onUpdate((data) => {
+                                    chinaGroup.applyMatrix(new THREE.Matrix4().makeScale(1, (1 / depthSnap) * data.x, 1))
+                                    depthSnap = data.x;
+                                    three.controls.update();
+                                })
+                                tween.easing(TWEEN.Easing.Linear.None);
+                                tween.start();
+                            },
+                            fn: function () {
+                                console.log('pullUpEnd')
+                            }
+                        })
+                    }
+                })
 
-            }
+            },
+            flashing: true,
         }
         let gui = new GUI();
         gui.add(param, 'animateCamera')
+        gui.add(param, 'pullUp')
+        gui.add(param, 'flashing').onChange(function (val) {
+            three.applyRenderEvent('a', val);
+        })
     }
 
     function loadGeoJson(data) {
@@ -137,13 +222,14 @@
             linewidth: 3,
             dashed: false
         })
+
         polygonBorderMaterial.resolution.set(window.innerWidth, window.innerHeight)
 
         //选中颜色
         let isChooecolor = new THREE.Color(0x1E90FF);
         let polygonContextMaterial = new THREE.MeshBasicMaterial({
             color: 0x2F4F4F,
-            side: THREE.BackSide
+            side: THREE.FrontSide
         })
 
         //GeoJson 对象材质定义   
@@ -173,7 +259,8 @@
 
         let features = data.features;
 
-        let chinaGroup = new THREE.Group(); chinaGroup.name = 'chinaGroup';
+        chinaGroup = new THREE.Group(); chinaGroup.name = '中国';
+        allLineGroup = new THREE.Group(); allLineGroup.name = '下层线';
         for (let i = 0; i < features.length; i++) {
 
 
@@ -223,19 +310,26 @@
                         let line = new Line2(lineGeometry, polygonBorderMaterial);
                         line.computeLineDistances();
                         provinceGroup.add(line);
+                        let l2 = line.clone()
+                        l2.material = l2.material.clone();
+                        l2.material.color = new THREE.Color(0x00BFFF)
+                        allLineGroup.add(l2);
+
                     }
 
                     //添加context
                     let polygonContextMaterial = GeoJsonObj[geometry.type].context;
                     if (polygonContextMaterial != null) {
-                        let shapeGeometry = new THREE.ShapeGeometry(shape);
-                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial.clone());
+                        // let shapeGeometry = new THREE.ShapeGeometry(shape);
+
+                        let shapeGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                        let context = new THREE.Mesh(shapeGeometry, [polygonContextMaterial.clone(), polygonContextMaterial2]);
                         context.rotation.x = Math.PI / 2
                         context.on('mouseenter', function (obj) {
-                            obj.material.color = isChooecolor.clone();
+                            obj.material[0].color = isChooecolor.clone();
                         })
                         context.on('mouseleave', function (obj) {
-                            obj.material.color = polygonContextMaterial.color.clone();
+                            obj.material[0].color = polygonContextMaterial.color.clone();
                         })
                         context.on('click', function (obj) {
                             let point = obj.centerPoint.clone()
@@ -283,13 +377,18 @@
                         let line = new Line2(lineGeometry, polygonBorderMaterial);
                         line.computeLineDistances();
                         provinceGroup.add(line);
+                        let l2 = line.clone()
+                        l2.material = l2.material.clone();
+                        l2.material.color = new THREE.Color(0x00BFFF)
+                        allLineGroup.add(l2);
                     }
 
                     //添加context
                     let polygonContextMaterial = GeoJsonObj[geometry.type].context;
                     if (polygonContextMaterial != null) {
-                        let shapeGeometry = new THREE.ShapeGeometry(shape);
-                        let context = new THREE.Mesh(shapeGeometry, polygonContextMaterial.clone());
+                        // let shapeGeometry = new THREE.ShapeGeometry(shape);
+                        let shapeGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                        let context = new THREE.Mesh(shapeGeometry, [polygonContextMaterial.clone(), polygonContextMaterial2]);
                         context.rotation.x = Math.PI / 2
                         context.on('mouseenter', function (obj) {
                             obj.material.color = isChooecolor.clone();
@@ -313,10 +412,12 @@
                     }
                 }
             }
-            three.scene.add(provinceGroup)
+            chinaGroup.add(provinceGroup);
 
         }
-
+        chinaGroup.position.y = 1;
+        three.scene.add(allLineGroup);
+        three.scene.add(chinaGroup)
     }
 
 
@@ -329,7 +430,6 @@
         y = 20037508.3427892 * Math.log(Math.tan(tmp)) / Math.PI;
         return { x: x / 100000, y: z, z: -y / 100000 };
     }
-
 
 </script>
 

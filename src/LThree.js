@@ -178,6 +178,7 @@ class LThree {
             target:Vector3   //相机移动时候的视角中心点 
             fn:func   //回调
             limit:false  //是否应用限制
+            fn1000:fnc //某毫秒特定回调
         }
         */
         this.animateCamera = function (opt) {
@@ -189,6 +190,16 @@ class LThree {
                 fn: function () { },
                 limit: false
             }, opt);
+            //阶段回调
+            let fns = []
+            for(let name in option) {
+                if((name.indexOf('fn')!=-1)&&name!='fn'){
+                    fns.push(name.substring(name.indexOf('fn')+2));
+                }
+                }
+                fns.sort(function (a, b) {
+                    return a <b;
+                    });
 
             if (!(option.points instanceof Array)) {
                 option.points = [option.points];
@@ -201,7 +212,8 @@ class LThree {
                 cz: this.camera.position.z,
                 tx: this.controls.target.x,
                 ty: this.controls.target.y,
-                tz: this.controls.target.z
+                tz: this.controls.target.z,
+                time:0
             }
             let tween = new TWEEN.Tween(startData);
 
@@ -220,7 +232,8 @@ class LThree {
                 cz: czs,
                 tx: option.target.x,
                 ty: option.target.y,
-                tz: option.target.z
+                tz: option.target.z,
+                time:option.time
             }, option.time);
             //取消控制器限制
             let oldmaxAzimuthAngle = this.controls.maxAzimuthAngle
@@ -241,7 +254,7 @@ class LThree {
                 this.controls.maxZoom = Infinity
                 this.controls.minZoom = 0
             }
-
+            let fnN = 0;
             tween.onUpdate((data) => {
                 //关闭控制器
                 this.controls.enabled = false;
@@ -251,6 +264,11 @@ class LThree {
                 this.controls.target.x = data.tx;
                 this.controls.target.y = data.ty;
                 this.controls.target.z = data.tz;
+                //执行回调
+                if((fnN<fns.length)&&data.time>=fns[fnN]){
+                    option['fn'+fns[fnN]](data.time);
+                    fnN++;
+                };
                 this.controls.update();
             })
             tween.onComplete(() => {

@@ -16,6 +16,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "lottie-web": "^5.7.5",
     "three": "^0.119.1"
   }
 }
