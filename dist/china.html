@@ -238,10 +238,6 @@
             MultiPoint: null,
             LineString: null,
             MultiLineString: null,
-            Polygon: {
-                border: polygonBorderMaterial,
-                context: polygonContextMaterial
-            },
             MultiPolygon: {
                 border: polygonBorderMaterial,
                 context: polygonContextMaterial
@@ -347,70 +343,6 @@
                     }
                 }
 
-            }
-            if (geometry.type == 'Polygon') {
-                let coordinates = geometry.coordinates;
-                for (let k = 0; k < coordinates.length; k++) {
-                    //经纬度数据
-                    let vertices = [];
-                    //样条曲线对象
-                    let shape = new THREE.Shape();
-                    //阿里的数据都是单层的 所以直接拿第一个数组
-                    let Polygon = coordinates[k];
-                    for (let m = 0; m < Polygon.length; m++) {
-                        let lon = Polygon[m][0];
-                        let lat = Polygon[m][1];
-                        let Mercator = lonlatToMercator(lon, lat);
-                        vertices.push(Mercator.x, Mercator.y + 0.01, Mercator.z);
-                        //样条曲线
-                        if (m == 0) {
-                            shape.moveTo(Mercator.x, Mercator.z)
-                        } else {
-                            shape.lineTo(Mercator.x, Mercator.z)
-                        }
-                    }
-                    //添加boder
-                    let polygonBorderMaterial = GeoJsonObj[geometry.type].border;
-                    if (polygonBorderMaterial != null) {
-                        let lineGeometry = new LineGeometry();
-                        lineGeometry.setPositions(vertices);
-                        let line = new Line2(lineGeometry, polygonBorderMaterial);
-                        line.computeLineDistances();
-                        provinceGroup.add(line);
-                        let l2 = line.clone()
-                        l2.material = l2.material.clone();
-                        l2.material.color = new THREE.Color(0x00BFFF)
-                        allLineGroup.add(l2);
-                    }
-
-                    //添加context
-                    let polygonContextMaterial = GeoJsonObj[geometry.type].context;
-                    if (polygonContextMaterial != null) {
-                        // let shapeGeometry = new THREE.ShapeGeometry(shape);
-                        let shapeGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-                        let context = new THREE.Mesh(shapeGeometry, [polygonContextMaterial.clone(), polygonContextMaterial2]);
-                        context.rotation.x = Math.PI / 2
-                        context.on('mouseenter', function (obj) {
-                            obj.material.color = isChooecolor.clone();
-                        })
-                        context.on('mouseleave', function (obj) {
-                            obj.material.color = polygonContextMaterial.color.clone()
-                        })
-                        context.on('click', function (obj) {
-                            let point = obj.centerPoint.clone()
-                            point.y = 15;
-                            let target = obj.centerPoint.clone()
-                            target.z += -1;
-                            three.animateCamera({
-                                points: point,
-                                target: target,
-                                time: 1000
-                            })
-                        })
-                        context.centerPoint = new THREE.Vector3(lablePosition.x, lablePosition.y, lablePosition.z);
-                        provinceGroup.add(context);
-                    }
-                }
             }
             chinaGroup.add(provinceGroup);
 
