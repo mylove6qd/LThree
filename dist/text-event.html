@@ -1,3 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    canvas {
+        outline: 0;
+    }
+
+    h3 {
+        float: left;
+    }
+
+    .div {
+        width: 100%;
+        height: 70px;
+        position: absolute;
+    }
+</style>
+
+<body>
+    <div class="div">
+        <h3>mouseenter/mouseleave&nbsp;&nbsp;</h3>
+        <h3 id="text">0</h3>
+    </div>
+    <div class="div" style="margin-top: 100px;">
+        <h3>mouseover/mouseout&nbsp;&nbsp;</h3>
+        <h3 id="text2">0</h3>
+    </div>
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script>
+    var three = new LThree({ id: 'webgl' });
+    three.camera.position.set(0, 0, 20);
+    three.camera.lookAt(three.scene.position);
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+
+    var geometry = new THREE.BoxGeometry(10, 10, 1);
+    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x4169E1) });
+    var cube = new THREE.Mesh(geometry, material);
+    cube.name = '蓝色';
+    let i = 0;
+    let i2 = 0;
+    cube.on('mouseenter', function () {
+        document.getElementById('text').innerHTML = ++i2
+    })
+    three.scene.add(cube)
+    cube.on('mouseleave', function () {
+        document.getElementById('text').innerHTML = --i2
+    })
+    cube.on('mouseover', function () {
+        document.getElementById('text2').innerHTML = ++i
+    })
+    three.scene.add(cube)
+    cube.on('mouseout', function () {
+        document.getElementById('text2').innerHTML = --i
+    })
+    var geometry2 = new THREE.BoxGeometry(3, 3, 1);
+    var material2 = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xEE82EE) });
+    var cube2 = new THREE.Mesh(geometry2, material2);
+    cube2.name = '红色';
+    cube2.position.set(0, 0, 10);
+    three.scene.add(cube2)
+    three.update();
+
+</script>
+
+</html>
+
+
+
+
+
 /**
  * @author lcx / https://github.com/mylove6qd
  * THREE r-118
@@ -44,6 +130,8 @@ class LThree {
         //鼠标指向的对象 (用于mouseover mouseout)
         this._mouseObj = null;
         this._mouseObjs = [];
+           //鼠标指向的对象 (如果是mouseenter保存 如果是mouseleave去除)
+        this._mouseMap = new Map();
         //是否按下
         this._isDown = false;
         //是否脱移
@@ -54,7 +142,21 @@ class LThree {
                 if (obj.hasOwnProperty(EventName)) {
                     //判断是否冒泡
                     if (this._isPropagation) {
+                        //如果是mouseenter保存
+                        if(EventName=='mouseenter'){
+                            if(!this._mouseMap.has(obj.uuid)){
+                                (obj[EventName])(obj, event); 
+                                this._mouseMap.set(obj.uuid,obj);
+                            }
+                        }else if(EventName=='mouseleave'){
+                             //如果是mouseleave去除
+                             if(this._mouseMap.has(obj.uuid)){
+                                (obj[EventName])(obj, event); 
+                                   this._mouseMap.delete(obj.uuid);
+                            }
+                        }else{
                             (obj[EventName])(obj, event);
+                        }
                     } else {
                         //不冒泡就恢复冒泡
                         this._isPropagation = true;
@@ -354,22 +456,26 @@ class LThree {
                 //判断是不是同一个对象
                 if (this._mouseObj != obj) {
                     this._recursionEvent(obj, 'mouseover', event);
+                    // this._recursionEvent(obj, 'mouseenter', event);
                     this._recursionEvent(this._mouseObj, 'mouseout', event);
                 }
-                let changeObj = deduplication(this._mouseObjs,objs)
-                for(let i = 0 ;i<changeObj[0].length;i++){
-                    this._recursionEvent(changeObj[0][i], 'mouseleave', event);
-                }
-                for(let i = 0 ;i<changeObj[1].length;i++){
-                    this._recursionEvent(changeObj[1][i], 'mouseenter', event);
-                }
+                // objs.forEach((item)=>{
+                //     if (contains(this._mouseObjs,item)==-1) {
+                //         this._recursionEvent(item, 'mouseenter', event);
+                //     }
+                // })
+                this._mouseMap.forEach((item)=>{
+                    if (contains(objs,item)==-1) {
+                        this._recursionEvent(item, 'mouseleave', event);
+                    }
+                })
             } else {
                 //新进入
                 this._recursionEvent(obj, 'mouseover', event);
                 this._recursionEvent(obj, 'mouseenter', event);
             }
             this._mouseObj = obj;
-            this._mouseObjs= objs;
+            this._mouseObjs = objs;
         });
         //添加window 的resize事件监听 (浏览器窗口变动触发的方法)
         window.addEventListener('resize', (event) => {
@@ -439,32 +545,4 @@ function contains(a, obj) {
     }
     return -1;
 }
-//去重
-function deduplication(a1,b1){
-    let a = [].concat(a1);
-    let b = [].concat(b1);
-    for(let i = 0;i<a.length;i++){
-        for(let j = 0;j<b.length;j++){
-            if(a[i]==b[j]){
-                a.splice(i,1,null);
-                b.splice(j,1,null);
-                break
-            }
-        }
-    }
-    return [a,b];
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -111,10 +111,10 @@
             uniform float time;
             varying float z;
             void main(){
-                gl_FragColor = vec4(color,(1.-z)*time);
+                 gl_FragColor = vec4(color,(1.-z)*time);
             }`
     });
-
+    let chooseObj = null
     let chinaGroup
     let allLineGroup
     //加载数据
@@ -310,22 +310,22 @@
                         l2.material = l2.material.clone();
                         l2.material.color = new THREE.Color(0x00BFFF)
                         allLineGroup.add(l2);
-
                     }
 
                     //添加context
                     let polygonContextMaterial = GeoJsonObj[geometry.type].context;
                     if (polygonContextMaterial != null) {
                         // let shapeGeometry = new THREE.ShapeGeometry(shape);
-
                         let shapeGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                         let context = new THREE.Mesh(shapeGeometry, [polygonContextMaterial.clone(), polygonContextMaterial2]);
                         context.rotation.x = Math.PI / 2
                         context.on('mouseenter', function (obj) {
-                            obj.material[0].color = isChooecolor.clone();
+                                obj.material[0].color = isChooecolor.clone();
+                                   //   obj.parent.position.y = 1;
                         })
                         context.on('mouseleave', function (obj) {
                             obj.material[0].color = polygonContextMaterial.color.clone();
+                        //   obj.parent.position.y = 1;
                         })
                         context.on('click', function (obj) {
                             let point = obj.centerPoint.clone()
@@ -344,6 +344,7 @@
                 }
 
             }
+            
             chinaGroup.add(provinceGroup);
 
         }
