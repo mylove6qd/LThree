@@ -13,7 +13,7 @@ LUtils.loadGLTF = function (srcs,fun) {
     for(let i = 0;i<srcs.length;i++){
         loader.load(srcs[i], function (gltf) {
                 ++index;
-                returnObj[i] = gltf.scene;
+                returnObj[i] = gltf;
                 if(index==srcs.length){
                     let start_time2 = (new Date()).getTime();
                     console.log(index+"个GLTF模型加载时间 "+(start_time2 - start_time)/1000 + " 秒");

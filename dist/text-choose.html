@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script>
+    var three = new LThree({ id: 'webgl' });
+    three.camera.position.set(-4, 1, 1);
+    three.camera.lookAt(three.scene.position);
+    //背景颜色
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+    //网格辅助
+    var helper = new THREE.GridHelper(40000, 100, 0xffffff, 0xffffff);
+    three.scene.add(helper);
+    var axesHelper = new THREE.AxesHelper(5);
+    three.scene.add(axesHelper);
+    //添加环境光
+    let ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.0);
+    let mixer;
+    let server ;
+    var clock = new THREE.Clock();
+    three.addRenderEvent('mixer', () => {
+        if (mixer) mixer.update(clock.getDelta());
+    }, true);
+    three.scene.add(ambientLight);
+    //加载模型
+    LUtils.loadGLTF(['./model/server.gltf'], function (obj) {
+        server = obj[0].scene.children[0]
+        mixer = new THREE.AnimationMixer(server);
+        let action = mixer.clipAction(obj[0].animations[0]);
+        action.play();
+        server.scale.set(0.015, 0.015, 0.015);
+        three.scene.add(server);
+        server.on('click',function(obj){
+            three.isChoose(obj);
+            three.stopPropagation();
+        })
+    }); 
+    three.scene.on('click',function(obj){
+        three.isNotChoose(server)
+    })
+    three.update();
+</script>
+
+</html>

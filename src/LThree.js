@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module';
 import { LineMaterial } from 'three/examples/jsm/Lines/LineMaterial.js';
@@ -54,15 +55,14 @@ class LThree {
                 if (obj.hasOwnProperty(EventName)) {
                     //判断是否冒泡
                     if (this._isPropagation) {
-                            (obj[EventName])(obj, event);
+                        (obj[EventName])(obj, event);
                     } else {
                         //不冒泡就恢复冒泡
                         this._isPropagation = true;
                         return;
                     }
-
                 }
-                this._recursionEvent(obj.parent, EventName);
+                this._recursionEvent(obj.parent, EventName, event);
             }
         }
         //发射射线
@@ -194,14 +194,14 @@ class LThree {
             }, opt);
             //阶段回调
             let fns = []
-            for(let name in option) {
-                if((name.indexOf('fn')!=-1)&&name!='fn'){
-                    fns.push(name.substring(name.indexOf('fn')+2));
+            for (let name in option) {
+                if ((name.indexOf('fn') != -1) && name != 'fn') {
+                    fns.push(name.substring(name.indexOf('fn') + 2));
                 }
-                }
-                fns.sort(function (a, b) {
-                    return a <b;
-                    });
+            }
+            fns.sort(function (a, b) {
+                return a < b;
+            });
 
             if (!(option.points instanceof Array)) {
                 option.points = [option.points];
@@ -215,7 +215,7 @@ class LThree {
                 tx: this.controls.target.x,
                 ty: this.controls.target.y,
                 tz: this.controls.target.z,
-                time:0
+                time: 0
             }
             let tween = new TWEEN.Tween(startData);
 
@@ -235,7 +235,7 @@ class LThree {
                 tx: option.target.x,
                 ty: option.target.y,
                 tz: option.target.z,
-                time:option.time
+                time: option.time
             }, option.time);
             //取消控制器限制
             let oldmaxAzimuthAngle = this.controls.maxAzimuthAngle
@@ -267,8 +267,8 @@ class LThree {
                 this.controls.target.y = data.ty;
                 this.controls.target.z = data.tz;
                 //执行回调
-                if((fnN<fns.length)&&data.time>=fns[fnN]){
-                    option['fn'+fns[fnN]](data.time);
+                if ((fnN < fns.length) && data.time >= fns[fnN]) {
+                    option['fn' + fns[fnN]](data.time);
                     fnN++;
                 };
                 this.controls.update();
@@ -292,6 +292,31 @@ class LThree {
             tween.start();
         }
 
+        this.isChoose = function (obj) {
+            if (obj != undefined) {
+                //添加包围盒
+                this.scene.remove(this.boxHelper)
+                this.boxHelper = new THREE.BoxHelper(obj);
+                this.scene.add(this.boxHelper)
+                this.applyRenderEvent('_boxHelperRender', true);
+                //挂载控制器
+                this.scene.remove(this.transformControls)
+                this.transformControls.detach()
+                this.transformControls.attach(obj);
+                this.scene.add(this.transformControls);
+            }
+        }
+        this.isNotChoose = function (obj) {
+            if (obj != undefined) {
+                //除去包围盒
+                this.applyRenderEvent('_boxHelperRender', false);
+                this.scene.remove(this.boxHelper)
+                //除去控制器挂载
+                this.transformControls.detach()
+                this.scene.remove(this.transformControls)
+            }
+        }
+
         let option = Object.assign({
             id: opt.id,
             scene: new THREE.Scene(),
@@ -301,7 +326,7 @@ class LThree {
 
         //基本配置
         let controls = opt.controls || new OrbitControls(option.camera, option.renderer.domElement);
-
+        this.transformControls = new TransformControls(option.camera, option.renderer.domElement)
         this.scene = option.scene;
         this.camera = option.camera;
         this.camera.position.set(0, 1, 0);
@@ -313,6 +338,55 @@ class LThree {
         this.controls.target.x = this.scene.position.x;
         this.controls.target.y = this.scene.position.y;
         this.controls.target.z = this.scene.position.z;
+        this.boxHelper = new THREE.BoxHelper();
+        //  this.scene.add(this.transformControls);
+        //包围盒事件
+        this.addRenderEvent('_boxHelperRender', () => {
+            this.boxHelper.update();
+        }, false);
+        //transformControls控制器
+        this.transformControls.addEventListener('dragging-changed', (event) => {
+            this.controls.enabled = !event.value;
+        });
+        window.addEventListener('keydown', (event) => {
+
+            switch (event.keyCode) {
+                case 16: // Shift
+                    this.transformControls.setTranslationSnap(100);
+                    this.transformControls.setRotationSnap(THREE.MathUtils.degToRad(15));
+                    this.transformControls.setScaleSnap(0.25);
+                    break;
+                case 87: // W
+                    this.transformControls.setMode("translate");
+                    break;
+                case 69: // E
+                    this.transformControls.setMode("rotate");
+                    break;
+                case 82: // R
+                    this.transformControls.setMode("scale");
+                    break;
+                case 107: // +, =, num+
+                    this.transformControls.setSize(this.transformControls.size + 0.1);
+                    break;
+                case 109: // -, _, num-
+                    this.transformControls.setSize(Math.max(this.transformControls.size - 0.1, 0.1));
+                    break;
+                case 88: // X
+                    this.transformControls.showX = !this.transformControls.showX;
+                    break;
+                case 89: // Y
+                    this.transformControls.showY = !this.transformControls.showY;
+                    break;
+                case 90: // Z
+                    this.transformControls.showZ = !this.transformControls.showZ;
+                    break;
+                case 32: // Spacebar
+                    this.transformControls.enabled = !this.transformControls.enabled;
+                    break;
+            }
+        });
+
+        //OrbitControls控制器
         //视角变化的才出发
         this.controls.addEventListener('change', () => {
             this._isControlsChange = true;
@@ -356,11 +430,11 @@ class LThree {
                     this._recursionEvent(obj, 'mouseover', event);
                     this._recursionEvent(this._mouseObj, 'mouseout', event);
                 }
-                let changeObj = deduplication(this._mouseObjs,objs)
-                for(let i = 0 ;i<changeObj[0].length;i++){
+                let changeObj = deduplication(this._mouseObjs, objs)
+                for (let i = 0; i < changeObj[0].length; i++) {
                     this._recursionEvent(changeObj[0][i], 'mouseleave', event);
                 }
-                for(let i = 0 ;i<changeObj[1].length;i++){
+                for (let i = 0; i < changeObj[1].length; i++) {
                     this._recursionEvent(changeObj[1][i], 'mouseenter', event);
                 }
             } else {
@@ -369,7 +443,7 @@ class LThree {
                 this._recursionEvent(obj, 'mouseenter', event);
             }
             this._mouseObj = obj;
-            this._mouseObjs= objs;
+            this._mouseObjs = objs;
         });
         //添加window 的resize事件监听 (浏览器窗口变动触发的方法)
         window.addEventListener('resize', (event) => {
@@ -390,6 +464,7 @@ export {
     LLineGeometry,
     LLineBufferGeometry,
     OrbitControls,
+    TransformControls,
     LineMaterial,
     LineSegmentsGeometry,
     LineSegments2,
@@ -417,7 +492,7 @@ function LThree_filterVisible3dObj(intersects) {
     return intersects;
 }
 //射线对象去重
-function LThree_removeRepeat(arr){
+function LThree_removeRepeat(arr) {
     let map = new Map();
     for (let item of arr) {
         if (!map.has(item.object.uuid)) {
@@ -440,19 +515,19 @@ function contains(a, obj) {
     return -1;
 }
 //去重
-function deduplication(a1,b1){
+function deduplication(a1, b1) {
     let a = [].concat(a1);
     let b = [].concat(b1);
-    for(let i = 0;i<a.length;i++){
-        for(let j = 0;j<b.length;j++){
-            if(a[i]==b[j]){
-                a.splice(i,1,null);
-                b.splice(j,1,null);
+    for (let i = 0; i < a.length; i++) {
+        for (let j = 0; j < b.length; j++) {
+            if (a[i] == b[j]) {
+                a.splice(i, 1, null);
+                b.splice(j, 1, null);
                 break
             }
         }
     }
-    return [a,b];
+    return [a, b];
 }
 
 
