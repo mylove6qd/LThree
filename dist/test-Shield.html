@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script>
+    var three = new LThree({ id: 'webgl' });
+    three.camera.position.set(-104.2188538885968,  52.73156366934838,  22.85599416068873);
+    three.camera.lookAt(three.scene.position);
+    //背景颜色
+    three.renderer.setClearColor(new THREE.Color(0x000), 1.0);
+    //网格辅助
+    var helper = new THREE.GridHelper(40000, 100, 0xffffff, 0xffffff);
+    three.scene.add(helper);
+
+    //顶点着色器
+    let shaderVS = `
+    varying vec3 vNormal;
+                varying vec3 vPositionNormal;
+                varying vec2 vUv;
+                void main() 
+                {
+                    vUv = uv;
+                    vNormal = normalize( normalMatrix * normal ); // 转换到视图空间
+                    vPositionNormal = normalize(( modelViewMatrix * vec4(position, 1.0) ).xyz);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                }
+    `
+    //片源着色器
+    let shaderFS = `
+    uniform vec3 glowColor;
+                uniform float bias;
+                uniform float power;
+                uniform float scale;
+                varying vec3 vNormal;
+                varying vec3 vPositionNormal;
+                uniform sampler2D textureMap;
+                uniform vec2 repeat;
+                uniform float time;
+                varying vec2 vUv;
+                void main() 
+                {
+                    float a = pow( bias + scale * abs(dot(vNormal, vPositionNormal)), power );
+                    //*(vec2(1.0,time))
+                     vec4 mapColor=texture2D( textureMap, vUv*repeat);
+                    gl_FragColor = vec4( glowColor*mapColor.rgb, a*mapColor.a);
+                }
+    `
+    //uniforms参数
+    let shieldUniforms = {
+        scale: { type: "f", value: -1.0 },
+        bias: { type: "f", value: 1.0 },
+        power: { type: "f", value: 2.5 },
+        glowColor: { type: "c", value: new THREE.Color(0x00ffff) },
+        textureMap: {
+            value: undefined
+        },
+        repeat: {
+            type: "v2",
+            value: new THREE.Vector2(30.0, 15.0)
+        },
+        time: {
+            value: 0.0
+        }
+    }
+    //加载图案
+   let texture = new THREE.TextureLoader().load('./img/Shield2.png');
+   texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        shieldUniforms.textureMap.value = texture
+        //创建半球体
+        let geo = new THREE.SphereGeometry(40, 100, 100, 0, Math.PI * 2, 0, Math.PI / 2);
+        //材质
+        let material = new THREE.ShaderMaterial({
+            uniforms: shieldUniforms,
+            vertexShader: shaderVS,
+            fragmentShader: shaderFS,
+            //side: DoubleSide,
+            //blending:AdditiveBlending,
+            transparent: true,
+            depthWrite: false
+        });
+        let geoMesh = new THREE.Mesh(geo, material);
+        three.scene.add(geoMesh);
+    //材质浮动
+    three.addRenderEvent('a', () => {
+        geoMesh.rotateY(0.002);
+    }, true)
+    three.update();
+
+</script>
+
+</html>
