@@ -36,14 +36,16 @@
     three.scene.add(helper);
     var axesHelper = new THREE.AxesHelper(5);
     three.scene.add(axesHelper);
+    //设置辅助对象不被拾取
+    three.isGet(false,[helper,axesHelper],true)
     //添加环境光
     let ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.0);
     let mixer;
-    let server ;
+    let server;
     var clock = new THREE.Clock();
     three.addRenderEvent('mixer', () => {
         if (mixer) mixer.update(clock.getDelta());
-    }, true);
+    }, false);
     three.scene.add(ambientLight);
     //加载模型
     LUtils.loadGLTF(['./model/server.gltf'], function (obj) {
@@ -53,14 +55,28 @@
         action.play();
         server.scale.set(0.015, 0.015, 0.015);
         three.scene.add(server);
-        server.on('click',function(obj){
-            three.isChoose(obj);
+        server.on('click', function (obj) {
+            three.boxHelper.material.color = new THREE.Color(0x008000);
+            three.chooseObj(obj);
+            three.applyRenderEvent('mixer', true)
             three.stopPropagation();
         })
-    }); 
-    three.scene.on('click',function(obj){
-        three.isNotChoose(server)
+    });
+    three.scene.on('click', function (obj) {
+        three.applyRenderEvent('mixer', false)
+        three.notChooseObj()
     })
+    //方块
+    let geometry = new THREE.BoxGeometry(1, 1, 1);
+    let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    let cube = new THREE.Mesh(geometry, material);
+    cube.position.y = -2
+    cube.on('click', function (obj) {
+        three.boxHelper.material.color = new THREE.Color(0x0000FF);
+        three.chooseObj(obj);
+        three.stopPropagation();
+    })
+    three.scene.add(cube);
     three.update();
 </script>
 

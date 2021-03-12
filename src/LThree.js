@@ -55,7 +55,7 @@ class LThree {
                 if (obj.hasOwnProperty(EventName)) {
                     //判断是否冒泡
                     if (this._isPropagation) {
-                        (obj[EventName])(obj, event);
+                            (obj[EventName])(obj, event);
                     } else {
                         //不冒泡就恢复冒泡
                         this._isPropagation = true;
@@ -76,8 +76,8 @@ class LThree {
             raycaster.setFromCamera(mouse, this.camera);
             let intersects = raycaster.intersectObjects(this.scene.children, true);
             intersects = LThree_removeRepeat(intersects);
+            intersects = LThree_filterVisible3dObj(intersects);
             if (intersects.length > 0) {
-                intersects = LThree_filterVisible3dObj(intersects);
                 let objs = [];
                 for (let i = 0; i < intersects.length; i++) {
                     objs.push(intersects[i].object);
@@ -292,21 +292,23 @@ class LThree {
             tween.start();
         }
 
-        this.isChoose = function (obj) {
+        this.chooseObj = function (obj) {
             if (obj != undefined) {
                 //添加包围盒
                 this.scene.remove(this.boxHelper)
-                this.boxHelper = new THREE.BoxHelper(obj);
+                this.boxHelper = this.boxHelper.setFromObject(obj);
                 this.scene.add(this.boxHelper)
                 this.applyRenderEvent('_boxHelperRender', true);
                 //挂载控制器
                 this.scene.remove(this.transformControls)
                 this.transformControls.detach()
                 this.transformControls.attach(obj);
+                this.transformControls._obj = obj;
                 this.scene.add(this.transformControls);
             }
         }
-        this.isNotChoose = function (obj) {
+        this.notChooseObj = function () {
+            let obj = this.transformControls._obj;
             if (obj != undefined) {
                 //除去包围盒
                 this.applyRenderEvent('_boxHelperRender', false);
@@ -315,6 +317,28 @@ class LThree {
                 this.transformControls.detach()
                 this.scene.remove(this.transformControls)
             }
+        }
+        //设置对象是否可以被获取到 isParent是否遍历子类默认为true
+        this.isGet = function(tag,obj,isParent){
+            if(obj.constructor!=Array){
+                obj = [obj];
+            }
+            if(isParent==undefined){
+                isParent = true;
+            }
+            obj.forEach((item)=>{
+                if(isParent){
+                    if(item.hasOwnProperty('children')){
+                        for(let i = 0;i<item.children.length;i++){
+                            this.isGet(tag,item.children[i],isParent);
+                        }
+                    }
+                    item._isEvent = tag;
+                }else{
+                    item._isEvent = tag;
+                }
+            })
+            
         }
 
         let option = Object.assign({
@@ -339,7 +363,8 @@ class LThree {
         this.controls.target.y = this.scene.position.y;
         this.controls.target.z = this.scene.position.z;
         this.boxHelper = new THREE.BoxHelper();
-        //  this.scene.add(this.transformControls);
+        //设置选中的效果不纳入选中
+        this.isGet(false,[this.transformControls,this.boxHelper]);
         //包围盒事件
         this.addRenderEvent('_boxHelperRender', () => {
             this.boxHelper.update();
@@ -495,6 +520,9 @@ function LThree_filterVisible3dObj(intersects) {
 function LThree_removeRepeat(arr) {
     let map = new Map();
     for (let item of arr) {
+        if(item.object.hasOwnProperty('_isEvent')&&item.object._isEvent==false){
+            continue;
+        }
         if (!map.has(item.object.uuid)) {
             map.set(item.object.uuid, item);
         }
