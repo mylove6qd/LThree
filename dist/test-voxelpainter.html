@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>three-text</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    canvas {
+        outline: 0;
+    }
+</style>
+
+<body>
+
+    <div id="webgl">
+
+    </div>
+
+</body>
+<script src="./LThree.js"></script>
+<script>
+    var three = new LThree({ id: 'webgl' });
+    three.camera.position.set(500, 800, 1300);
+    three.camera.lookAt(three.scene.position);
+    three.renderer.setClearColor(new THREE.Color(0xDCDCDC), 1.0);
+    //网格
+    var gridHelper = new THREE.GridHelper(1000, 20);
+    three.scene.add(gridHelper);
+    three.isGet(false, [gridHelper]);
+    //隐藏平面
+    var planGeometry = new THREE.PlaneBufferGeometry(1000, 1000);
+    planGeometry.rotateX(- Math.PI / 2);
+    plane = new THREE.Mesh(planGeometry, new THREE.MeshBasicMaterial({ visible: false }));
+    three.scene.add(plane);
+    plane.on('mousemove-th', function (obj, e, intersect) {
+        if (moveObj) {
+            moveObj.position.copy(intersect.point).add(intersect.face.normal);
+            moveObj.position.divideScalar(50).floor().multiplyScalar(50).addScalar(25);
+            line.geometry.setFromPoints([box1.position, box2.position])
+        }
+    })
+    //移动对象
+    var moveObj;
+    //红方块哦
+    var box1 = new THREE.Mesh(new THREE.BoxBufferGeometry(50, 50, 50), new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, transparent: true }));
+    box1.position.set(-475, 25, 475);
+    three.scene.add(box1);
+    box1.on('click', clickEvent)
+    //蓝方块哇
+    var box2 = new THREE.Mesh(new THREE.BoxBufferGeometry(50, 50, 50), new THREE.MeshBasicMaterial({ color: 0x00BFFF, opacity: 1, transparent: true }));
+    box2.position.set(475, 25, -475);
+    three.scene.add(box2);
+    box2.on('click', clickEvent)
+    //链接线
+    var lineGeometry = new THREE.BufferGeometry().setFromPoints([box1.position, box2.position]);
+    var line = new THREE.Line(lineGeometry, new THREE.MeshBasicMaterial({ color: 0xFF00FF }));
+    three.scene.add(line);
+    //事件
+    function clickEvent(obj, e, ray) {
+        if (moveObj == obj) {
+            obj.material.opacity = 1;
+            line.material.opacity = 1;
+            moveObj = undefined
+        } else {
+            obj.material.opacity = 0.5;
+            line.material.opacity = 0.5;
+            moveObj = obj;
+        }
+    }
+    three.update();
+
+</script>
+
+</html>

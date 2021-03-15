@@ -55,7 +55,8 @@ class LThree {
                 if (obj.hasOwnProperty(EventName)) {
                     //判断是否冒泡
                     if (this._isPropagation) {
-                            (obj[EventName])(obj, event);
+                            (obj[EventName])(obj, event,obj._raycaster);
+                            obj._raycaster = undefined
                     } else {
                         //不冒泡就恢复冒泡
                         this._isPropagation = true;
@@ -76,10 +77,11 @@ class LThree {
             raycaster.setFromCamera(mouse, this.camera);
             let intersects = raycaster.intersectObjects(this.scene.children, true);
             intersects = LThree_removeRepeat(intersects);
-            intersects = LThree_filterVisible3dObj(intersects);
+           // intersects = LThree_filterVisible3dObj(intersects);
             if (intersects.length > 0) {
                 let objs = [];
                 for (let i = 0; i < intersects.length; i++) {
+                    intersects[i].object._raycaster = intersects[i];
                     objs.push(intersects[i].object);
                 }
                 return objs;
@@ -421,8 +423,11 @@ class LThree {
         this.container.appendChild(this.renderer.domElement);
         //双击事件
         this.container.addEventListener("dblclick", (event) => {
-            let obj = this._getRaycasterObj.bind(this)();
-            this._recursionEvent(obj, 'dblclick', event)
+            let objs = this._shootRaycaster.bind(this)();
+            this._recursionEvent(objs[0], 'dblclick', event)
+            objs.forEach((obj)=>{
+                this._recursionEvent(obj, 'dblclick-th', event)
+            })
         })
         //鼠标按下事件
         this.container.addEventListener("mousedown", (event) => {
@@ -432,8 +437,11 @@ class LThree {
         //鼠标弹起事件
         this.container.addEventListener("mouseup", (event) => {
             if (this._isMove == false) {
-                let obj = this._getRaycasterObj.bind(this)();
-                this._recursionEvent(obj, 'click', event)
+                let objs = this._shootRaycaster.bind(this)();
+                this._recursionEvent(objs[0], 'click', event)
+                objs.forEach((obj)=>{
+                    this._recursionEvent(obj, 'click-th', event)
+                })
             }
             this._mousedownObj = null;
             this._isDown = false;
@@ -444,7 +452,7 @@ class LThree {
             if (this._isDown) {
                 this._isMove = true;
             }
-            //mouseenter  mouseleave 
+            //mouseenter  mouseleave //穿透
             //mouseover  mouseout 
             //与 mouseout 事件不同，只有在鼠标指针离开被选元素时，才会触发 mouseleave 事件。如果鼠标指针离开任何子元素，同样会触发 mouseout 事件
             let objs = this._shootRaycaster.bind(this)();
@@ -455,6 +463,9 @@ class LThree {
                     this._recursionEvent(obj, 'mouseover', event);
                     this._recursionEvent(this._mouseObj, 'mouseout', event);
                 }
+                else{
+                    this._recursionEvent(obj, 'mousemove', event);
+                }
                 let changeObj = deduplication(this._mouseObjs, objs)
                 for (let i = 0; i < changeObj[0].length; i++) {
                     this._recursionEvent(changeObj[0][i], 'mouseleave', event);
@@ -462,6 +473,9 @@ class LThree {
                 for (let i = 0; i < changeObj[1].length; i++) {
                     this._recursionEvent(changeObj[1][i], 'mouseenter', event);
                 }
+                changeObj[2].forEach((obj)=>{
+                    this._recursionEvent(obj, 'mousemove-th', event);
+                })
             } else {
                 //新进入
                 this._recursionEvent(obj, 'mouseover', event);
@@ -546,16 +560,18 @@ function contains(a, obj) {
 function deduplication(a1, b1) {
     let a = [].concat(a1);
     let b = [].concat(b1);
+    let c = [];
     for (let i = 0; i < a.length; i++) {
         for (let j = 0; j < b.length; j++) {
             if (a[i] == b[j]) {
+                c.push(a[i]);
                 a.splice(i, 1, null);
                 b.splice(j, 1, null);
                 break
             }
         }
     }
-    return [a, b];
+    return [a, b, c];
 }
 
 
