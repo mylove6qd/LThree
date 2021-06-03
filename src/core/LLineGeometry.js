@@ -99,14 +99,12 @@ class LLineBufferGeometry extends BufferGeometry {
 
         this.updataMatrix = function (obj) {
 
-            let m = new THREE.Matrix4();
-
             //变换的逆矩阵
             let matrix = obj.matrix.clone().getInverse(obj.matrix.clone());
-            // matrix.multiply()
+          
             let a = []
             for (let i = 0; i < this.parameters.basePoints.length; i++) {
-                a.push(this.parameters.basePoints[i].clone().applyMatrix4(matrix));
+                a.push(this.parameters.basePoints[i].clone().applyMatrix4(obj.matrix));
             }
             buildPlane(this, a)
             let vertices = []
