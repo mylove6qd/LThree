@@ -12,7 +12,7 @@ import { GPU } from 'gpu.js';
 
 //LLineGeometry
 
-class LLLineGeometry extends Geometry {
+class LLineGeometry extends Geometry {
 
     //basePoints 基础点数组 [Vector2] / [Vector3]  width 条带宽度   相机点 cameraPosition
     constructor(basePoints, width, three) {
@@ -95,7 +95,7 @@ class LLineBufferGeometry extends BufferGeometry {
 
 
         //绑定事件
-        bindEvent(this, three)
+        // bindEvent(this, three)
 
         this.updataMatrix = function (obj) {
 
@@ -103,7 +103,7 @@ class LLineBufferGeometry extends BufferGeometry {
 
             //变换的逆矩阵
             let matrix = obj.matrix.clone().getInverse(obj.matrix.clone());
-
+            // matrix.multiply()
             let a = []
             for (let i = 0; i < this.parameters.basePoints.length; i++) {
                 a.push(this.parameters.basePoints[i].clone().applyMatrix4(matrix));
@@ -119,7 +119,7 @@ class LLineBufferGeometry extends BufferGeometry {
 
             }
 
-            obj.geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+            this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 
         }
 
@@ -193,7 +193,7 @@ function buildPlane(obj, baspoint) {
     const normals = [];
 
     //半径
-    let width = obj.parameters.width / 2;
+    // let width = obj.parameters.width / 2;
     let points = [];
 
     if (baspoint == undefined) {
@@ -206,6 +206,8 @@ function buildPlane(obj, baspoint) {
 
     //计算点
     for (let i = 0; i < points.length; i++) {
+        let scale = 2500 / obj.parameters.width
+        let width =points[i].clone().distanceTo(obj.parameters.cameraPosition.clone())/scale
 
         let point_1;
         let point_2;
